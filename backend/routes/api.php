@@ -6,6 +6,7 @@ use App\Http\Controllers\Api\TaskController;
 use App\Http\Controllers\Api\BuktiPiketController;
 use App\Http\Controllers\Api\JadwalPiketController;
 use App\Http\Controllers\Api\SanksiController;
+use App\Http\Controllers\Api\NotificationController;
 
 /*
 |--------------------------------------------------------------------------
@@ -74,6 +75,11 @@ Route::middleware('auth:sanctum')->group(function () {
 
         // Sanksi Saya
         Route::get('/sanksi-siswa', [SanksiController::class, 'meSiswa']);
+
+        // Inbox / Notifications
+        Route::get('/notifications', [NotificationController::class, 'index']);
+        Route::patch('/notifications/{id}/read', [NotificationController::class, 'markAsRead']);
+        Route::post('/notifications/read-all', [NotificationController::class, 'markAllAsRead']);
     });
 
 });

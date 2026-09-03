@@ -4,8 +4,11 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\Sanksi;
+use App\Models\User;
+use App\Models\JadwalPiket;
 use App\Models\SanksiSiswa;
 use Illuminate\Http\Request;
+use App\Notifications\SanksiNotification;
 
 class SanksiController extends Controller
 {
@@ -75,27 +78,63 @@ class SanksiController extends Controller
 
     // Admin memberikan sanksi ke siswa
     public function storeSiswa(Request $request)
-    {
-        $request->validate([
-            'user_id'     => 'required|exists:users,id',
-            'sanksi_id'   => 'required|exists:sanksis,id',
-            'tipe_sanksi' => 'required|in:individu,kelompok',
-            'alasan'      => 'required|string',
-        ]);
+{
+    $request->validate([
+        'user_id'     => 'nullable|exists:users,id', // Diperbolehkan null jika sanksi kelompok harian
+        'hari'        => 'nullable|in:Senin,Selasa,Rabu,Kamis,Jumat', // Jika sanksi kelompok per hari
+        'sanksi_id'   => 'required|exists:sanksis,id',
+        'tipe_sanksi' => 'required|in:individu,kelompok',
+        'alasan'      => 'required|string',
+    ]);
 
+    // Scenario A: Sanksi Individu
+    if ($request->tipe_sanksi === 'individu') {
         $sanksiSiswa = SanksiSiswa::create([
             'user_id'             => $request->user_id,
             'sanksi_id'           => $request->sanksi_id,
-            'tipe_sanksi'         => $request->tipe_sanksi,
+            'tipe_sanksi'         => 'individu',
             'alasan'              => $request->alasan,
             'status_penyelesaian' => 'belum',
         ]);
 
+        // Kirim inbox ke siswa tersebut
+        $user = User::find($request->user_id);
+        if ($user) {
+            $user->notify(new \App\Notifications\SanksiNotification($sanksiSiswa));
+        }
+
         return response()->json([
-            'message' => 'Sanksi berhasil diberikan kepada siswa',
-            'data'    => $sanksiSiswa->load(['user:id,name', 'sanksi'])
+            'message' => 'Sanksi individu berhasil diberikan dan inbox terkirim.',
+            'data'    => $sanksiSiswa
         ], 201);
     }
+
+    // Scenario B: Sanksi Kelompok (Semua siswa yang piket di hari tersebut)
+    if ($request->tipe_sanksi === 'kelompok' && $request->hari) {
+        // Ambil semua user_id yang ada di jadwal piket hari tersebut
+        $siswaPiket = JadwalPiket::where('hari', $request->hari)->get();
+
+        foreach ($siswaPiket as $piket) {
+            $sanksiSiswa = SanksiSiswa::create([
+                'user_id'             => $piket->user_id,
+                'sanksi_id'           => $request->sanksi_id,
+                'tipe_sanksi'         => 'kelompok',
+                'alasan'              => $request->alasan,
+                'status_penyelesaian' => 'belum',
+            ]);
+
+            // Kirim inbox ke masing-masing anggota kelompok
+            $user = User::find($piket->user_id);
+            if ($user) {
+                $user->notify(new \App\Notifications\SanksiNotification($sanksiSiswa));
+            }
+        }
+
+        return response()->json([
+            'message' => "Sanksi kelompok hari {$request->hari} berhasil diberikan ke semua anggota piket.",
+        ], 201);
+    }
+}
 
     // Admin / Siswa meng-update status sanksi (misal: dari 'belum' ke 'selesai')
     public function updateStatusSiswa(Request $request, $id)

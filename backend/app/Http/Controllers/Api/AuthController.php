@@ -9,7 +9,19 @@ use Illuminate\Support\Facades\Hash;
 
 class AuthController extends Controller
 {
-    public function login(Request $request)
+    // Login khusus Admin
+    public function loginAdmin(Request $request)
+    {
+        return $this->processLogin($request, 'admin');
+    }
+
+    // Login khusus Siswa
+    public function loginSiswa(Request $request)
+    {
+        return $this->processLogin($request, 'siswa');
+    }
+
+    private function processLogin(Request $request, string $requiredRole)
     {
         $request->validate([
             'email'    => 'required|email',
@@ -19,15 +31,14 @@ class AuthController extends Controller
         $user = User::where('email', $request->email)->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            return response()->json([
-                'message' => 'Email atau password salah.'
-            ], 401);
+            return response()->json(['message' => 'Email atau password salah.'], 401);
         }
 
-        // Hapus token lama jika ada
-        $user->tokens()->delete();
+        if ($user->role !== $requiredRole) {
+            return response()->json(['message' => "Akses ditolak. Akun ini bukan {$requiredRole}."], 403);
+        }
 
-        // Buat token baru
+        $user->tokens()->delete();
         $token = $user->createToken('auth_token')->plainTextToken;
 
         return response()->json([
@@ -51,10 +62,6 @@ class AuthController extends Controller
     {
         $request->user()->currentAccessToken()->delete();
 
-        return response()->json([
-            'message' => 'Logout berhasil'
-        ]);
+        return response()->json(['message' => 'Logout berhasil']);
     }
-
-    
 }

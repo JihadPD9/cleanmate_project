@@ -7,39 +7,73 @@ use App\Http\Controllers\Api\BuktiPiketController;
 use App\Http\Controllers\Api\JadwalPiketController;
 use App\Http\Controllers\Api\SanksiController;
 
-// Public Route
-Route::post('/login', [AuthController::class, 'login']);
+/*
+|--------------------------------------------------------------------------
+| Public Routes (Login)
+|--------------------------------------------------------------------------
+*/
+Route::post('/admin/login', [AuthController::class, 'loginAdmin']);
+Route::post('/siswa/login', [AuthController::class, 'loginSiswa']);
 
-// Protected Routes (Butuh Token Sanctum)
+/*
+|--------------------------------------------------------------------------
+| Protected Routes (Sanctum Authenticated)
+|--------------------------------------------------------------------------
+*/
 Route::middleware('auth:sanctum')->group(function () {
-    
-    // Auth & Profile
+
+    // Common Routes (Bisa diakses Admin & Siswa)
     Route::get('/me', [AuthController::class, 'me']);
     Route::post('/logout', [AuthController::class, 'logout']);
 
-    // Master Tasks
-    Route::apiResource('tasks', TaskController::class);
+    /*
+    |--------------------------------------------------------------------------
+    | Fitur Khusus ADMIN
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:admin')->prefix('admin')->group(function () {
+        // Master Tasks (CRUD)
+        Route::apiResource('tasks', TaskController::class);
 
-    // Bukti Piket
-    Route::get('/bukti-piket', [BuktiPiketController::class, 'index']); // Admin lihat semua
-    Route::get('/bukti-piket/me', [BuktiPiketController::class, 'me']); // Siswa lihat punya sendiri
-    Route::post('/bukti-piket', [BuktiPiketController::class, 'store']); // Siswa upload
-    Route::patch('/bukti-piket/{id}/status', [BuktiPiketController::class, 'updateStatus']); // Admin approval
+        // Management Bukti Piket
+        Route::get('/bukti-piket', [BuktiPiketController::class, 'index']);
+        Route::patch('/bukti-piket/{id}/status', [BuktiPiketController::class, 'updateStatus']);
 
-    // Jadwal Piket
-    Route::get('/jadwal-piket', [JadwalPiketController::class, 'index']);
-    Route::get('/jadwal-piket/me', [JadwalPiketController::class, 'me']);
-    Route::post('/jadwal-piket', [JadwalPiketController::class, 'store']);
-    Route::delete('/jadwal-piket/{id}', [JadwalPiketController::class, 'destroy']);
+        // Management Jadwal Piket
+        Route::get('/jadwal-piket', [JadwalPiketController::class, 'index']);
+        Route::post('/jadwal-piket', [JadwalPiketController::class, 'store']);
+        Route::delete('/jadwal-piket/{id}', [JadwalPiketController::class, 'destroy']);
 
-    // Master Sanksi
-    Route::get('/sanksi-master', [SanksiController::class, 'indexMaster']);
-    Route::post('/sanksi-master', [SanksiController::class, 'storeMaster']);
-    Route::delete('/sanksi-master/{id}', [SanksiController::class, 'destroyMaster']);
+        // Master Sanksi
+        Route::get('/sanksi-master', [SanksiController::class, 'indexMaster']);
+        Route::post('/sanksi-master', [SanksiController::class, 'storeMaster']);
+        Route::delete('/sanksi-master/{id}', [SanksiController::class, 'destroyMaster']);
 
-    // Sanksi Siswa
-    Route::get('/sanksi-siswa', [SanksiController::class, 'indexSiswa']);
-    Route::get('/sanksi-siswa/me', [SanksiController::class, 'meSiswa']);
-    Route::post('/sanksi-siswa', [SanksiController::class, 'storeSiswa']);
-    Route::patch('/sanksi-siswa/{id}/status', [SanksiController::class, 'updateStatusSiswa']);
+        // Management Sanksi Siswa
+        Route::get('/sanksi-siswa', [SanksiController::class, 'indexSiswa']);
+        Route::post('/sanksi-siswa', [SanksiController::class, 'storeSiswa']);
+        Route::patch('/sanksi-siswa/{id}/status', [SanksiController::class, 'updateStatusSiswa']);
+    });
+
+    /*
+    |--------------------------------------------------------------------------
+    | Fitur Khusus SISWA
+    |--------------------------------------------------------------------------
+    */
+    Route::middleware('role:siswa')->prefix('siswa')->group(function () {
+        // Task List (Siswa hanya bisa lihat daftar tugas)
+        Route::get('/tasks', [TaskController::class, 'index']);
+
+        // Bukti Piket
+        Route::get('/bukti-piket', [BuktiPiketController::class, 'me']);
+        Route::post('/bukti-piket', [BuktiPiketController::class, 'store']);
+
+        // Jadwal Piket
+        Route::get('/jadwal-piket', [JadwalPiketController::class, 'me']);
+        Route::get('/jadwal-piket/kelas', [JadwalPiketController::class, 'index']); // Melihat jadwal sekelas
+
+        // Sanksi Saya
+        Route::get('/sanksi-siswa', [SanksiController::class, 'meSiswa']);
+    });
+
 });

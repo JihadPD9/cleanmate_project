@@ -48,11 +48,14 @@ Route::middleware('auth:sanctum')->group(function () {
         // Master Sanksi
         Route::get('/sanksi-master', [SanksiController::class, 'indexMaster']);
         Route::post('/sanksi-master', [SanksiController::class, 'storeMaster']);
+        Route::put('/sanksi-master/{id}', [SanksiController::class, 'updateMaster']); // Edit Master Sanksi
         Route::delete('/sanksi-master/{id}', [SanksiController::class, 'destroyMaster']);
 
         // Management Sanksi Siswa
         Route::get('/sanksi-siswa', [SanksiController::class, 'indexSiswa']);
         Route::post('/sanksi-siswa', [SanksiController::class, 'storeSiswa']);
+        Route::put('/sanksi-siswa/{id}', [SanksiController::class, 'updateSiswa']); // Edit Sanksi Siswa
+        Route::delete('/sanksi-siswa/{id}', [SanksiController::class, 'destroySiswa']); // Hapus Sanksi Siswa
         Route::patch('/sanksi-siswa/{id}/status', [SanksiController::class, 'updateStatusSiswa']);
     });
 

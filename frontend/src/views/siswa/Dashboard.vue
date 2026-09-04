@@ -373,7 +373,7 @@ const scheduleMapData = {
   Selasa: [{ name: 'Riki' }, { name: 'Candra' }],
   Rabu: [{ name: 'Ilman Abidullah' }, { name: 'Riki' }],
   Kamis: [{ name: 'Jihad' }, { name: 'Candra' }],
-  Jumat: [{ name: 'Ilman Abidullah' }, { name: 'Jihad' }, { name: 'Riki' }],
+  Jumat: [{ name: 'Ilman Abidullah' }, { name: 'Riki' }],
 }
 
 const myDutyDaysFormatted = computed(() => {

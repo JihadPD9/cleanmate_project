@@ -3,7 +3,7 @@
     <!-- Admin Navbar Component -->
     <AdminNavbar />
 
-    <!-- Main Content Container (Single page flow, single window scrollbar) -->
+    <!-- Main Content Container -->
     <main class="max-w-7xl mx-auto px-6 md:px-12 py-8 w-full space-y-6">
       <!-- Top Info Bar: Real-time WIB Clock & Dashboard Overview -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200/80 px-6 py-3.5 rounded-2xl shadow-xs">
@@ -12,7 +12,7 @@
           <span>Dashboard Overview</span>
         </div>
 
-        <!-- Dynamic Real-time Clock (WIB) dengan nama hari warna hijau (#00B775) -->
+        <!-- Dynamic Real-time Clock (WIB) -->
         <div class="flex items-center space-x-2 text-xs md:text-sm font-semibold text-slate-700">
           <Clock class="w-4 h-4 text-[#00B775]" />
           <span>
@@ -53,18 +53,24 @@
             <div class="grid grid-cols-2 gap-3 pt-1">
               <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3">
                 <p class="text-xs font-medium text-slate-500">Total Siswa</p>
-                <p class="text-2xl font-extrabold text-slate-900 mt-1">26</p>
+                <p class="text-2xl font-extrabold text-slate-900 mt-1">
+                  <span v-if="siswaLoading" class="text-base text-slate-400">...</span>
+                  <span v-else>{{ totalSiswaCount }}</span>
+                </p>
               </div>
               <div class="bg-rose-50/70 border border-rose-200/80 rounded-xl p-3">
                 <p class="text-xs font-medium text-rose-600">Sanksi Aktif</p>
-                <p class="text-2xl font-extrabold text-rose-600 mt-1">2</p>
+                <p class="text-2xl font-extrabold text-rose-600 mt-1">
+                  <span v-if="sanksiLoading" class="text-base text-slate-400">...</span>
+                  <span v-else>{{ activeSanksiCount }}</span>
+                </p>
               </div>
             </div>
           </div>
 
           <button
             @click="showDetailAlert('Data Siswa')"
-            class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer"
+            class="w-full bg-[#00B775] hover:bg-[#009d64] text-white py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer"
           >
             <span>Lihat Detail</span>
             <ChevronRight class="w-4 h-4" />
@@ -125,37 +131,38 @@
 
             <div>
               <h2 class="text-xl font-extrabold text-slate-900">Data Sanksi</h2>
-              <p class="text-slate-500 text-xs mt-0.5">Konfigurasi daftar sanksi dan poin pelanggaran.</p>
+              <p class="text-slate-500 text-xs mt-0.5">Konfigurasi daftar sanksi dan pelanggaran siswa.</p>
             </div>
 
             <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 flex items-center justify-between">
               <div>
-                <p class="text-xs font-semibold text-slate-600">Total Kategori Sanksi</p>
-                <p class="text-xs text-slate-400">Jenis sanksi aktif</p>
+                <p class="text-xs font-semibold text-slate-600">Sanksi Belum Tuntas</p>
+                <p class="text-xs text-slate-400">Status 'belum' dituntaskan</p>
               </div>
               <div class="text-3xl font-extrabold text-amber-600">
-                7
+                <span v-if="sanksiLoading" class="text-base text-slate-400">...</span>
+                <span v-else>{{ activeSanksiCount }}</span>
               </div>
             </div>
           </div>
 
-          <button
-            @click="showDetailAlert('Data Sanksi')"
-            class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer"
+          <router-link
+            to="/admin/sanksi"
+            class="w-full bg-[#00B775] hover:bg-[#009d64] text-white py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs"
           >
-            <span>Lihat Detail</span>
+            <span>Kelola Data Sanksi</span>
             <ChevronRight class="w-4 h-4" />
-          </button>
+          </router-link>
         </div>
 
         <!-- 4. Data Jadwal Piket Card -->
         <div class="bg-white border border-slate-200/80 rounded-2xl p-6 shadow-xs hover:shadow-md transition-shadow duration-200 flex flex-col justify-between space-y-5 lg:col-span-2">
           <div class="space-y-4">
             <div class="flex items-center justify-between">
-              <div class="w-12 h-12 rounded-2xl bg-indigo-50 border border-indigo-200 flex items-center justify-center text-indigo-600">
+              <div class="w-12 h-12 rounded-2xl bg-teal-50 border border-teal-200 flex items-center justify-center text-teal-600">
                 <Calendar class="w-6 h-6" />
               </div>
-              <span class="text-xs font-bold uppercase tracking-wider text-indigo-600 bg-indigo-50 px-2.5 py-1 rounded-full border border-indigo-200">
+              <span class="text-xs font-bold uppercase tracking-wider text-teal-700 bg-teal-50 px-2.5 py-1 rounded-full border border-teal-200">
                 Penjadwalan
               </span>
             </div>
@@ -165,39 +172,68 @@
               <p class="text-slate-500 text-xs mt-0.5">Kelola giliran piket harian dan sanksi kelompok kelas.</p>
             </div>
 
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <!-- Officers List -->
-              <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-4 space-y-2">
-                <div class="flex items-center justify-between">
-                  <span class="text-xs font-bold text-slate-700">Piket Hari Ini:</span>
-                  <span class="text-xs font-extrabold text-[#00B775] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
-                    {{ currentDayName }}
-                  </span>
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4 items-stretch">
+              <!-- Officers List (Set to flex flex-col h-full so height always matches right column) -->
+              <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-4 flex flex-col justify-between space-y-2 h-full">
+                <div class="space-y-2">
+                  <div class="flex items-center justify-between">
+                    <span class="text-xs font-bold text-slate-700">Piket Hari Ini:</span>
+                    <span class="text-xs font-extrabold text-[#00B775] bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200">
+                      {{ currentDayName }}
+                    </span>
+                  </div>
+                  <div v-if="jadwalLoading" class="text-xs text-slate-400 font-medium">Memuat...</div>
+                  <div v-else-if="todaySiswaList.length === 0" class="text-xs text-slate-400 font-medium italic">Tidak ada jadwal hari ini</div>
+                  <ul v-else class="text-xs text-slate-700 font-semibold space-y-1">
+                    <li
+                      v-for="item in todaySiswaList.slice(0, 4)"
+                      :key="item.id"
+                      class="flex items-center space-x-1.5"
+                    >
+                      <span class="w-1.5 h-1.5 rounded-full bg-[#00B775] inline-block"></span>
+                      <span>{{ item.user?.name ?? item.user?.nama ?? item.siswa?.name ?? item.siswa?.nama ?? item.name ?? '-' }}</span>
+                    </li>
+                    <li v-if="todaySiswaList.length > 4" class="text-slate-400 text-[10px]">
+                      +{{ todaySiswaList.length - 4 }} lainnya
+                    </li>
+                  </ul>
                 </div>
-                <ul class="text-xs text-slate-700 font-semibold space-y-1 list-disc list-inside">
-                  <li>Jihad</li>
-                  <li>Ilman</li>
-                </ul>
               </div>
 
-              <!-- Group Sanction -->
-              <div class="bg-rose-50/70 border border-rose-200/80 rounded-xl p-4 flex flex-col justify-between">
-                <p class="text-xs font-semibold text-rose-700">Sanksi Kelompok Aktif</p>
-                <div class="flex items-baseline justify-between pt-2">
-                  <span class="text-xs text-slate-500">Total Kelompok</span>
-                  <span class="text-3xl font-extrabold text-rose-600">2</span>
+              <!-- Right Column: 2 Stats Stacked Vertically (Atas-Bawah) -->
+              <div class="flex flex-col gap-3 h-full justify-between">
+                <div class="bg-teal-50/70 border border-teal-200/80 rounded-2xl p-3.5 flex items-center justify-between flex-1">
+                  <div>
+                    <p class="text-xs font-bold text-teal-700">Total Jadwal</p>
+                    <p class="text-[10px] text-slate-400 mt-0.5">Semua hari</p>
+                  </div>
+                  <p class="text-2xl font-extrabold text-teal-600">
+                    <span v-if="jadwalLoading" class="text-base text-slate-400">...</span>
+                    <span v-else>{{ totalJadwalCount }}</span>
+                  </p>
+                </div>
+
+                <div class="bg-[#00B775]/10 border border-[#00B775]/20 rounded-2xl p-3.5 flex items-center justify-between flex-1">
+                  <div>
+                    <p class="text-xs font-bold text-[#00B775]">Petugas Besok</p>
+                    <p class="text-[10px] text-slate-500 mt-0.5">Hari {{ tomorrowDayName }}</p>
+                  </div>
+                  <p class="text-2xl font-extrabold text-[#00B775]">
+                    <span v-if="jadwalLoading" class="text-base text-slate-400">...</span>
+                    <span v-else>{{ tomorrowSiswaList.length }}</span>
+                  </p>
                 </div>
               </div>
             </div>
           </div>
 
-          <button
-            @click="showDetailAlert('Data Jadwal Piket')"
-            class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer"
+          <router-link
+            to="/admin/jadwal"
+            class="w-full bg-[#00B775] hover:bg-[#009d64] text-white py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs"
           >
-            <span>Lihat Detail Jadwal</span>
+            <span>Kelola Jadwal Piket</span>
             <ChevronRight class="w-4 h-4" />
-          </button>
+          </router-link>
         </div>
 
         <!-- 5. Data Bukti Piket Card -->
@@ -236,13 +272,13 @@
               <!-- Action buttons -->
               <div class="grid grid-cols-2 gap-2 pt-1">
                 <button
-                  @click="approveProof"
+                  @click="showDetailAlert('Verifikasi Setuju')"
                   class="bg-[#00B775] hover:bg-[#009d64] text-white py-2 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer"
                 >
                   SETUJU
                 </button>
                 <button
-                  @click="rejectProof"
+                  @click="showDetailAlert('Verifikasi Tolak')"
                   class="bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer"
                 >
                   TOLAK
@@ -266,6 +302,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/utils/api'
 import AdminNavbar from '@/components/AdminNavbar.vue'
 import {
@@ -279,16 +316,20 @@ import {
   ChevronRight
 } from 'lucide-vue-next'
 
+const router = useRouter()
+
 const currentDayName = ref('')
 const formattedDateOnly = ref('')
 const formattedTimeOnly = ref('')
 const totalTasksCount = ref(0)
+const activeSanksiCount = ref(0)
 const tasksLoading = ref(false)
+const sanksiLoading = ref(false)
 let timer = null
 
 const dayNamesIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 
-// Update Real-time WIB Date & Time (Hari warna hijau)
+// Update Real-time WIB Date & Time
 const updateWibClock = () => {
   const now = new Date()
   const dayName = dayNamesIndo[now.getDay()]
@@ -306,7 +347,7 @@ const updateWibClock = () => {
   formattedTimeOnly.value = `${hh}:${min}:${ss}`
 }
 
-// Fetch Real Tasks Count from API GET /api/admin/tasks
+// Fetch Real Tasks Count from API GET /admin/tasks
 const fetchTotalTasks = async () => {
   tasksLoading.value = true
   try {
@@ -316,32 +357,101 @@ const fetchTotalTasks = async () => {
     } else if (res.data && res.data.data && Array.isArray(res.data.data)) {
       totalTasksCount.value = res.data.data.length
     } else {
-      totalTasksCount.value = 7
+      totalTasksCount.value = 0
     }
   } catch (err) {
-    console.warn('API /admin/tasks call failed, falling back to count 7:', err)
-    totalTasksCount.value = 7
+    console.error('API /admin/tasks error:', err)
+    totalTasksCount.value = 0
   } finally {
     tasksLoading.value = false
   }
 }
 
+// Fetch Active Sanctions Count (status 'belum') from API GET /admin/sanksi-siswa
+const fetchActiveSanksi = async () => {
+  sanksiLoading.value = true
+  try {
+    const res = await api.get('/admin/sanksi-siswa')
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+    const activeItems = list.filter((item) => {
+      const currentStatus = item.status_penyelesaian ?? item.status
+      return currentStatus === 'belum' || currentStatus === 'BELUM'
+    })
+    activeSanksiCount.value = activeItems.length
+  } catch (err) {
+    console.error('API /admin/sanksi-siswa error:', err)
+    activeSanksiCount.value = 0
+  } finally {
+    sanksiLoading.value = false
+  }
+}
+
+const totalSiswaCount = ref(0)
+const siswaLoading = ref(false)
+const jadwalLoading = ref(false)
+const totalJadwalCount = ref(0)
+const todaySiswaList = ref([])
+const tomorrowSiswaList = ref([])
+const tomorrowDayName = ref('')
+
+// Fetch Real Total Siswa Count from API GET /admin/siswa
+const fetchTotalSiswa = async () => {
+  siswaLoading.value = true
+  try {
+    const res = await api.get('/admin/siswa')
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+    totalSiswaCount.value = list.length
+  } catch (err) {
+    console.error('API /admin/siswa error:', err)
+    totalSiswaCount.value = 0
+  } finally {
+    siswaLoading.value = false
+  }
+}
+
+// Fetch Jadwal Piket — untuk card dashboard
+const fetchJadwalDashboard = async () => {
+  jadwalLoading.value = true
+  try {
+    const res = await api.get('/admin/jadwal-piket')
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
+    totalJadwalCount.value = list.length
+    const dayNamesForFilter = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+    const now = new Date()
+    const today = dayNamesForFilter[now.getDay()]
+    const tomorrowIdx = (now.getDay() + 1) % 7
+    const tomorrow = dayNamesForFilter[tomorrowIdx]
+    
+    tomorrowDayName.value = tomorrow
+    todaySiswaList.value = list.filter(j => (j.hari_piket ?? j.hari) === today)
+    tomorrowSiswaList.value = list.filter(j => (j.hari_piket ?? j.hari) === tomorrow)
+  } catch (err) {
+    console.error('API /admin/jadwal-piket error:', err)
+    totalJadwalCount.value = 0
+    todaySiswaList.value = []
+    tomorrowSiswaList.value = []
+  } finally {
+    jadwalLoading.value = false
+  }
+}
+
 const showDetailAlert = (sectionName) => {
-  alert(`Halaman detail ${sectionName} sedang dalam pengembangan.`)
-}
-
-const approveProof = () => {
-  alert('Bukti piket telah DISETUJU!')
-}
-
-const rejectProof = () => {
-  alert('Bukti piket telah DITOLAK!')
+  if (sectionName === 'Data Sanksi') {
+    router.push('/admin/sanksi')
+  } else if (sectionName === 'Data Siswa') {
+    router.push('/admin/siswa')
+  } else {
+    console.log(`Navigating to ${sectionName}`)
+  }
 }
 
 onMounted(() => {
   updateWibClock()
   timer = setInterval(updateWibClock, 1000)
   fetchTotalTasks()
+  fetchActiveSanksi()
+  fetchTotalSiswa()
+  fetchJadwalDashboard()
 })
 
 onUnmounted(() => {

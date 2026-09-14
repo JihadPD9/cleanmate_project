@@ -282,11 +282,16 @@
                       {{ (siswaPage - 1) * itemsPerPage + index + 1 }}
                     </td>
                     <td class="px-5 py-4 font-bold text-slate-900">
-                      <span v-if="item.tipe === 'individu'">{{ item.siswa?.name || item.user?.name || '-' }}</span>
-                      <span v-else class="flex items-center space-x-1.5">
-                        <Users class="w-4 h-4 text-indigo-500 shrink-0" />
-                        <span>Kelompok {{ item.hari }}</span>
-                      </span>
+                      <div v-if="(item.tipe_sanksi || item.tipe) === 'individu'">
+                        {{ item.siswa?.name || item.user?.name || '-' }}
+                      </div>
+                      <div v-else class="flex flex-col space-y-0.5">
+                        <span class="text-slate-900 font-extrabold">{{ item.siswa?.name || item.user?.name || '-' }}</span>
+                        <span class="inline-flex items-center space-x-1 text-xs text-indigo-600 font-semibold">
+                          <Users class="w-3.5 h-3.5 shrink-0" />
+                          <span>Kelompok{{ (item.hari || item.user?.hari_piket || item.siswa?.hari_piket) ? ` ${item.hari || item.user?.hari_piket || item.siswa?.hari_piket}` : '' }}</span>
+                        </span>
+                      </div>
                     </td>
                     <td class="px-5 py-4 text-slate-700 font-medium">
                       {{ item.masterSanksi?.nama_sanksi || item.sanksi?.nama_sanksi || '-' }}
@@ -294,11 +299,11 @@
                     <td class="px-5 py-4">
                       <span :class="[
                         'inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-full border uppercase tracking-wide',
-                        item.tipe === 'individu'
+                        (item.tipe_sanksi || item.tipe) === 'individu'
                           ? 'bg-sky-100 text-sky-700 border-sky-200'
                           : 'bg-indigo-100 text-indigo-700 border-indigo-200'
                       ]">
-                        {{ item.tipe }}
+                        {{ item.tipe_sanksi || item.tipe }}
                       </span>
                     </td>
                     <td class="px-5 py-4 text-slate-600 max-w-[180px] truncate" :title="item.alasan">
@@ -641,7 +646,7 @@
           <p class="text-sm text-slate-600 leading-relaxed font-medium">
             Apakah Anda yakin ingin menghapus data sanksi untuk
             <span class="font-bold text-slate-900">
-              {{ siswaToDelete?.tipe === 'individu'
+              {{ (siswaToDelete?.tipe_sanksi || siswaToDelete?.tipe) === 'individu'
                 ? (siswaToDelete?.siswa?.name || siswaToDelete?.user?.name || 'siswa ini')
                 : `Kelompok ${siswaToDelete?.hari}` }}
             </span>?
@@ -865,8 +870,36 @@ watch([siswaSearch, statusFilter], () => { siswaPage.value = 1 })
 const fetchSanksiSiswa = async () => {
   loadingSiswa.value = true
   try {
-    const res = await api.get('/admin/sanksi-siswa')
-    sanksiSiswa.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
+    const [resSanksi, resJadwal] = await Promise.allSettled([
+      api.get('/admin/sanksi-siswa'),
+      api.get('/admin/jadwal-piket')
+    ])
+
+    const rawSanksi = resSanksi.status === 'fulfilled'
+      ? (Array.isArray(resSanksi.value.data) ? resSanksi.value.data : (resSanksi.value.data?.data ?? []))
+      : []
+
+    const rawJadwal = resJadwal.status === 'fulfilled'
+      ? (Array.isArray(resJadwal.value.data) ? resJadwal.value.data : (resJadwal.value.data?.data ?? []))
+      : []
+
+    // Petakan user_id ke hari piket dari jadwal
+    const userHariMap = {}
+    rawJadwal.forEach((j) => {
+      const uid = j.user_id || j.user?.id || j.siswa?.id
+      const h = j.hari_piket || j.hari
+      if (uid && h) userHariMap[uid] = h
+    })
+
+    // Gabungkan hari ke item sanksi jika item.hari kosong
+    sanksiSiswa.value = rawSanksi.map((item) => {
+      const uid = item.user_id || item.user?.id || item.siswa?.id
+      const mappedHari = item.hari || userHariMap[uid] || item.user?.hari_piket || item.siswa?.hari_piket || ''
+      return {
+        ...item,
+        hari: mappedHari
+      }
+    })
   } catch (err) {
     showToast(extractErrorMessage(err), 'error')
     sanksiSiswa.value = []
@@ -877,18 +910,10 @@ const fetchSanksiSiswa = async () => {
 
 const fetchDaftarSiswa = async () => {
   try {
-    const res = await api.get('/admin/jadwal-piket')
-    const rawData = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
-    // Extract user objects from schedule items, ensuring unique students
-    const studentMap = new Map()
-    rawData.forEach((item) => {
-      if (item.user && item.user.id) {
-        studentMap.set(item.user.id, item.user)
-      }
-    })
-    daftarSiswa.value = Array.from(studentMap.values())
+    const res = await api.get('/admin/siswa')
+    daftarSiswa.value = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
   } catch (err) {
-    console.warn('Gagal memuat daftar siswa dari jadwal piket:', err)
+    console.warn('Gagal memuat daftar siswa:', err)
     daftarSiswa.value = []
   }
 }
@@ -897,8 +922,8 @@ const openSanksiSiswaModal = (item = null) => {
   siswaIsEditing.value = !!item
   siswaEditingId.value = item?.id ?? null
   siswaForm.value = {
-    tipe: item?.tipe ?? 'individu',
-    user_id: item?.user_id ?? item?.siswa?.id ?? '',
+    tipe: item?.tipe_sanksi ?? item?.tipe ?? 'individu',
+    user_id: item?.user_id ?? item?.siswa?.id ?? item?.user?.id ?? '',
     hari: item?.hari ?? '',
     sanksi_id: item?.sanksi_id ?? item?.masterSanksi?.id ?? item?.sanksi?.id ?? '',
     alasan: item?.alasan ?? '',
@@ -911,7 +936,7 @@ const closeSiswaModal = () => { showSiswaModal.value = false }
 const submitSiswaForm = async () => {
   submittingSiswa.value = true
   const payload = {
-    tipe: siswaForm.value.tipe,
+    tipe_sanksi: siswaForm.value.tipe,
     sanksi_id: siswaForm.value.sanksi_id,
     alasan: siswaForm.value.alasan,
     ...(siswaForm.value.tipe === 'individu'

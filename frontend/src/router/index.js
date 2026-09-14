@@ -6,6 +6,7 @@ import LoginPage from '@/views/LoginPage.vue'
 import AdminDashboard from '@/views/admin/Dashboard.vue'
 import TasksManagement from '@/views/admin/TasksManagement.vue'
 import SiswaDashboard from '@/views/siswa/Dashboard.vue'
+import SanksiManagement from '@/views/admin/SanksiManagement.vue'
 import UploadBuktiPage from '@/views/siswa/UploadBuktiPage.vue'
 
 const routes = [
@@ -44,6 +45,12 @@ const routes = [
     meta: { requiresAuth: true, role: 'admin' },
   },
   {
+    path: '/admin/sanksi',
+    name: 'AdminSanksi',
+    component: SanksiManagement,
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
     // Catch-all fallback route
     path: '/:pathMatch(.*)*',
     redirect: '/',
@@ -55,24 +62,24 @@ const router = createRouter({
   routes,
 })
 
-// Navigation Guard
-router.beforeEach((to, from, next) => {
+// Navigation Guard (Vue Router 4 Return Value Syntax)
+router.beforeEach((to) => {
   const authStore = useAuthStore()
 
   if (to.meta.requiresAuth) {
     if (!authStore.isAuthenticated) {
-      return next({ name: 'Login', query: { redirect: to.fullPath } })
+      return { name: 'Login', query: { redirect: to.fullPath } }
     }
 
     if (to.meta.role && authStore.role !== to.meta.role) {
       // Redirect ke dashboard sesuai rolenya jika mencoba akses area berlawanan
       return authStore.role === 'admin' 
-        ? next({ name: 'AdminDashboard' }) 
-        : next({ name: 'SiswaDashboard' })
+        ? { name: 'AdminDashboard' } 
+        : { name: 'SiswaDashboard' }
     }
   }
 
-  next()
+  return true
 })
 
 export default router

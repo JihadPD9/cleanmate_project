@@ -1,13 +1,13 @@
 <template>
-  <header class="w-full bg-white/70 backdrop-blur-md border-b border-slate-200/50 py-3.5 px-6 md:px-12 flex items-center justify-between shadow-xs sticky top-0 z-40 transition-all duration-300">
-    <!-- Brand Logo Text Only -->
-    <div class="flex items-center">
-      <router-link to="/admin/dashboard" class="text-2xl font-extrabold tracking-tight text-slate-900">
+  <header class="w-full bg-white/70 backdrop-blur-md border-b border-slate-200/50 py-3 px-6 md:px-12 flex items-center justify-between shadow-xs sticky top-0 z-40 transition-all duration-300">
+    <!-- Left: Brand -->
+    <div class="flex items-center space-x-6">
+      <router-link to="/admin/dashboard" class="text-2xl font-extrabold tracking-tight text-slate-900 shrink-0">
         Clean<span class="text-[#00B775]">Mate</span>
       </router-link>
     </div>
 
-    <!-- Action Area: Logout Button -->
+    <!-- Right: Logout Button -->
     <div class="flex items-center space-x-4">
       <button
         @click="showLogoutModal = true"
@@ -18,7 +18,7 @@
       </button>
     </div>
 
-    <!-- Teleport Modal ke <body> agar Backdrop Blur Menutupi Seluruh Layar (100% Sama Rata) -->
+    <!-- Logout Confirmation Modal -->
     <teleport to="body">
       <div
         v-if="showLogoutModal"
@@ -34,24 +34,14 @@
               <p class="text-xs text-slate-500 font-medium">Konfirmasi sesi keluar</p>
             </div>
           </div>
-
           <p class="text-sm text-slate-600 leading-relaxed font-medium">
             Apakah Anda yakin ingin keluar dari sistem <span class="font-bold text-slate-900">CleanMate</span>?
           </p>
-
           <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
-            <button
-              type="button"
-              @click="showLogoutModal = false"
-              class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-100 transition cursor-pointer"
-            >
+            <button type="button" @click="showLogoutModal = false" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-100 transition cursor-pointer">
               Batal
             </button>
-            <button
-              type="button"
-              @click="confirmLogout"
-              class="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-rose-600/20 transition cursor-pointer"
-            >
+            <button type="button" @click="confirmLogout" class="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-rose-600/20 transition cursor-pointer">
               Ya, Keluar
             </button>
           </div>
@@ -63,11 +53,12 @@
 
 <script setup>
 import { ref } from 'vue'
-import { useRouter } from 'vue-router'
+import { useRouter, useRoute } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { LogOut } from 'lucide-vue-next'
 
 const router = useRouter()
+const route = useRoute()
 const authStore = useAuthStore()
 const showLogoutModal = ref(false)
 

@@ -133,44 +133,56 @@
             </p>
           </div>
 
-          <!-- Glassmorphism Card Container -->
-          <div class="w-full relative overflow-hidden backdrop-blur-md bg-white/75 border border-white/80 shadow-xl shadow-emerald-900/5 rounded-3xl p-8 md:p-10 transition-all duration-500 text-left flex flex-col justify-center group mb-6">
-            <!-- Background Watermark Icon -->
-            <div class="absolute -right-8 -bottom-8 opacity-[0.07] group-hover:opacity-15 transition-opacity duration-500 pointer-events-none">
-              <component :is="carouselItems[activeIndex].icon" class="w-64 h-64 text-[#00B775]" />
-            </div>
-
-            <div class="flex items-center space-x-4 mb-4 z-10">
-              <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#00B775] to-emerald-400 flex items-center justify-center shadow-md shadow-[#00B775]/25 text-white shrink-0">
-                <component :is="carouselItems[activeIndex].icon" class="w-6 h-6" />
-              </div>
-              <div>
-                <span class="text-xs font-bold uppercase tracking-wider text-[#00B775]">Point 0{{ activeIndex + 1 }}</span>
-                <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900">
-                  {{ carouselItems[activeIndex].title }}
-                </h3>
-              </div>
-            </div>
-
-            <p class="text-slate-700 leading-relaxed text-base md:text-lg pl-0 sm:pl-16 z-10 font-normal">
-              {{ carouselItems[activeIndex].description }}
-            </p>
-          </div>
-
-          <!-- Carousel Pagination Dots (Bulat-bulat Interaktif) -->
-          <div class="flex justify-center items-center space-x-3">
-            <button
+          <!-- Single Full-Width Swipeable & Drag-to-Scroll Card Container -->
+          <div
+            ref="cardsContainer"
+            @scroll="handleCardScroll"
+            @mousedown="startDrag"
+            @mouseleave="stopDrag"
+            @mouseup="stopDrag"
+            @mousemove="onDrag"
+            class="w-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth py-4 no-scrollbar mb-4 cursor-grab active:cursor-grabbing select-none"
+          >
+            <div
               v-for="(item, index) in carouselItems"
               :key="index"
-              @click="activeIndex = index"
+              class="snap-center shrink-0 w-full relative overflow-hidden backdrop-blur-md bg-white/75 border border-white/80 shadow-xl shadow-emerald-900/5 rounded-3xl p-8 md:p-10 text-left flex flex-col justify-center group"
+            >
+              <!-- Background Watermark Icon -->
+              <div class="absolute -right-8 -bottom-8 opacity-[0.07] group-hover:opacity-15 transition-opacity duration-500 pointer-events-none">
+                <component :is="item.icon" class="w-64 h-64 text-[#00B775]" />
+              </div>
+
+              <div class="flex items-center space-x-4 mb-4 z-10">
+                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#00B775] to-emerald-400 flex items-center justify-center shadow-md shadow-[#00B775]/25 text-white shrink-0">
+                  <component :is="item.icon" class="w-6 h-6" />
+                </div>
+                <div>
+                  <span class="text-xs font-bold uppercase tracking-wider text-[#00B775]">Point 0{{ index + 1 }}</span>
+                  <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900">
+                    {{ item.title }}
+                  </h3>
+                </div>
+              </div>
+
+              <p class="text-slate-700 leading-relaxed text-base md:text-lg pl-0 sm:pl-16 z-10 font-normal">
+                {{ item.description }}
+              </p>
+            </div>
+          </div>
+
+          <!-- Carousel Indicator Dots (Pure Visual Indicator, Non-clickable) -->
+          <div class="flex justify-center items-center space-x-3 pointer-events-none select-none">
+            <div
+              v-for="(item, index) in carouselItems"
+              :key="index"
               :class="[
-                'rounded-full transition-all duration-300 focus:outline-none cursor-pointer',
+                'rounded-full transition-all duration-300',
                 activeIndex === index
                   ? 'w-10 h-3.5 bg-[#00B775] shadow-md shadow-[#00B775]/40'
-                  : 'w-3.5 h-3.5 bg-emerald-200 hover:bg-emerald-400'
+                  : 'w-3.5 h-3.5 bg-emerald-200'
               ]"
-              :aria-label="'Go to slide ' + (index + 1)"
-            ></button>
+            ></div>
           </div>
         </div>
       </section>
@@ -184,11 +196,44 @@ import { ShieldCheck, CheckCircle2, ArrowRight, Zap, HeartPulse, Award } from 'l
 
 const activeIndex = ref(0)
 const scrollContainer = ref(null)
+const cardsContainer = ref(null)
 const isScrolled = ref(false)
+
+// Drag-to-scroll state
+const isDragging = ref(false)
+let startX = 0
+let scrollLeftStart = 0
+
+const startDrag = (e) => {
+  isDragging.value = true
+  startX = e.pageX - cardsContainer.value.offsetLeft
+  scrollLeftStart = cardsContainer.value.scrollLeft
+}
+
+const stopDrag = () => {
+  isDragging.value = false
+}
+
+const onDrag = (e) => {
+  if (!isDragging.value || !cardsContainer.value) return
+  e.preventDefault()
+  const x = e.pageX - cardsContainer.value.offsetLeft
+  const walk = (x - startX) * 1.5 // multiplier for scroll speed
+  cardsContainer.value.scrollLeft = scrollLeftStart - walk
+}
 
 const handleScroll = () => {
   if (scrollContainer.value) {
     isScrolled.value = scrollContainer.value.scrollTop > 200
+  }
+}
+
+const handleCardScroll = () => {
+  if (cardsContainer.value) {
+    const scrollLeft = cardsContainer.value.scrollLeft
+    const width = cardsContainer.value.clientWidth
+    const newIdx = Math.round(scrollLeft / width)
+    activeIndex.value = Math.min(Math.max(newIdx, 0), carouselItems.length - 1)
   }
 }
 
@@ -214,7 +259,15 @@ let timer = null
 
 onMounted(() => {
   timer = setInterval(() => {
+    if (isDragging.value) return // Don't auto-slide while user is dragging
     activeIndex.value = (activeIndex.value + 1) % carouselItems.length
+    if (cardsContainer.value) {
+      const cardWidth = cardsContainer.value.scrollWidth / carouselItems.length
+      cardsContainer.value.scrollTo({
+        left: cardWidth * activeIndex.value,
+        behavior: 'smooth'
+      })
+    }
   }, 5000)
 })
 

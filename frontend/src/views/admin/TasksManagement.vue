@@ -1,6 +1,6 @@
 <template>
   <div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-[#00B775] selection:text-white relative">
-    <!-- 2. Custom Toast Notification (Fixed Top-Right) -->
+    <!-- Custom Toast Notification (Fixed Top-Right) -->
     <transition
       enter-active-class="transition duration-300 ease-out"
       enter-from-class="opacity-0 translate-x-8 scale-95"
@@ -60,7 +60,7 @@
             Manajemen Tugas Piket
           </h1>
           <p class="text-slate-600 text-sm">
-            Kelola daftar tugas piket kelas, kriteria kebersihan, dan bobot poin.
+            Kelola daftar tugas piket kelas dan kriteria kebersihan.
           </p>
         </div>
 
@@ -108,7 +108,6 @@
                   <th class="px-6 py-4 w-16">No</th>
                   <th class="px-6 py-4">Nama Tugas</th>
                   <th class="px-6 py-4">Deskripsi Tugas</th>
-                  <th class="px-6 py-4 w-32 text-center">Bobot / Poin</th>
                   <th class="px-6 py-4 w-40 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -124,11 +123,6 @@
                   <td class="px-6 py-4 font-bold text-slate-900">{{ task.nama_tugas }}</td>
                   <td class="px-6 py-4 text-slate-600 max-w-xs md:max-w-md truncate">
                     {{ task.deskripsi || '-' }}
-                  </td>
-                  <td class="px-6 py-4 text-center">
-                    <span class="inline-block bg-emerald-100 text-[#00B775] font-extrabold px-3 py-1 rounded-full text-xs border border-emerald-200">
-                      {{ task.bobot || 1 }} Poin
-                    </span>
                   </td>
                   <td class="px-6 py-4 text-center">
                     <div class="flex items-center justify-center space-x-2">
@@ -153,14 +147,14 @@
             </table>
           </div>
 
-          <!-- Footer Paginasi Interaktif dengan Ikon (< dan >) & Kondisi Tampil -->
+          <!-- Footer Paginasi Interaktif -->
           <div class="px-6 py-4 bg-slate-50/80 border-t border-slate-200/80 flex flex-col sm:flex-row items-center justify-between gap-3 text-xs font-semibold text-slate-600">
             <div>
               Menampilkan <span class="text-slate-900 font-bold">{{ startItemIndex }}</span> - <span class="text-slate-900 font-bold">{{ endItemIndex }}</span> dari <span class="text-[#00B775] font-extrabold">{{ filteredTasks.length }}</span> Tugas Piket
             </div>
 
             <div class="flex items-center space-x-1.5">
-              <!-- Tombol Sebelumnya (Hanya muncul jika currentPage > 1) -->
+              <!-- Tombol Sebelumnya -->
               <button
                 v-if="currentPage > 1"
                 @click="currentPage--"
@@ -170,7 +164,7 @@
                 <ChevronLeft class="w-4 h-4" />
               </button>
 
-              <!-- Angka Halaman (1, 2, ...) -->
+              <!-- Angka Halaman -->
               <button
                 v-for="page in totalPages"
                 :key="page"
@@ -185,7 +179,7 @@
                 {{ page }}
               </button>
 
-              <!-- Tombol Selanjutnya (Hanya muncul jika currentPage < totalPages) -->
+              <!-- Tombol Selanjutnya -->
               <button
                 v-if="currentPage < totalPages"
                 @click="currentPage++"
@@ -243,20 +237,6 @@
             ></textarea>
           </div>
 
-          <!-- Bobot / Poin -->
-          <div class="space-y-1.5">
-            <label class="block text-slate-800 font-bold text-sm">
-              Bobot Poin
-            </label>
-            <input
-              v-model.number="form.bobot"
-              type="number"
-              min="1"
-              max="100"
-              class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs"
-            />
-          </div>
-
           <!-- Form Buttons -->
           <div class="flex items-center justify-end space-x-3 pt-4 border-t border-slate-100">
             <button
@@ -279,7 +259,7 @@
       </div>
     </div>
 
-    <!-- 1. Custom Confirmation Modal (Hapus Tugas) -->
+    <!-- Custom Confirmation Modal (Hapus Tugas) -->
     <div
       v-if="showDeleteModal"
       class="fixed inset-0 bg-slate-950/60 backdrop-blur-xs flex items-center justify-center p-4 z-50"
@@ -359,7 +339,6 @@ const editingId = ref(null)
 const form = ref({
   nama_tugas: '',
   deskripsi: '',
-  bobot: 1,
 })
 
 // Custom Delete Confirmation Modal State
@@ -422,7 +401,7 @@ watch(searchQuery, () => {
   currentPage.value = 1
 })
 
-// Fetch Tasks GET /admin/tasks
+// Fetch Tasks GET /admin/tasks (menggunakan api instance, tanpa dummy fallback)
 const fetchTasks = async () => {
   loading.value = true
   try {
@@ -432,39 +411,21 @@ const fetchTasks = async () => {
     } else if (res.data && res.data.data && Array.isArray(res.data.data)) {
       tasks.value = res.data.data
     } else {
-      loadDummyTasks()
+      tasks.value = []
     }
   } catch (err) {
-    console.warn('API /admin/tasks call failed, loading fallback items:', err)
-    loadDummyTasks()
+    console.error('API /admin/tasks error:', err)
+    tasks.value = []
+    showToast('Gagal memuat data tugas piket dari server.', 'error')
   } finally {
     loading.value = false
-  }
-}
-
-const loadDummyTasks = () => {
-  if (tasks.value.length === 0) {
-    tasks.value = [
-      { id: 1, nama_tugas: 'Menyapu Lantai', deskripsi: 'Menyapu area depan dan belakang kelas hingga bersih', bobot: 2 },
-      { id: 2, nama_tugas: 'Mengepel Lantai', deskripsi: 'Mengepel seluruh lantai kelas menggunakan karbol pewangi', bobot: 3 },
-      { id: 3, nama_tugas: 'Membersihkan Papan Tulis', deskripsi: 'Menghapus papan tulis dan merapikan spidol/penghapus', bobot: 1 },
-      { id: 4, nama_tugas: 'Mengosongkan Tempat Sampah', deskripsi: 'Membuang sampah kelas ke tempat penampungan akhir', bobot: 2 },
-      { id: 5, nama_tugas: 'Merapikan Meja Guru & Siswa', deskripsi: 'Mensejajarkan posisi meja dan kursi belajar', bobot: 1 },
-      { id: 6, nama_tugas: 'Membersihkan Jendela & Kaca', deskripsi: 'Lap pembersih kaca jendela luar dan dalam', bobot: 2 },
-      { id: 7, nama_tugas: 'Merapikan Alat Kebersihan', deskripsi: 'Mengembalikan sapu, pel, dan pengki ke sudut penyimpanan', bobot: 1 },
-      { id: 8, nama_tugas: 'Membersihkan Meja Komputer', deskripsi: 'Mengelap debu pada layar monitor dan meja komputer', bobot: 1 },
-      { id: 9, nama_tugas: 'Merapikan Sudut Baca / Rak Buku', deskripsi: 'Menyusun buku pelajaran di rak sesuai urutan', bobot: 2 },
-      { id: 10, nama_tugas: 'Membersihkan Kipas / AC', deskripsi: 'Membersihkan debu pada baling-baling kipas angin', bobot: 3 },
-      { id: 11, nama_tugas: 'Menyiram Tanaman Kelas', deskripsi: 'Menyiram pot tanaman hias di depan kelas', bobot: 1 },
-      { id: 12, nama_tugas: 'Membersihkan Loker Siswa', deskripsi: 'Mengecek dan merapikan kebersihan loker kelas', bobot: 2 },
-    ]
   }
 }
 
 const openAddModal = () => {
   isEditing.value = false
   editingId.value = null
-  form.value = { nama_tugas: '', deskripsi: '', bobot: 1 }
+  form.value = { nama_tugas: '', deskripsi: '' }
   isModalOpen.value = true
 }
 
@@ -474,7 +435,6 @@ const openEditModal = (task) => {
   form.value = {
     nama_tugas: task.nama_tugas,
     deskripsi: task.deskripsi || '',
-    bobot: task.bobot || 1,
   }
   isModalOpen.value = true
 }
@@ -494,54 +454,37 @@ const closeDeleteModal = () => {
   taskToDelete.value = null
 }
 
-// Submit Form (Tambah / Edit) dengan Custom Toast Notification
+// Submit Form (Tambah / Edit) - Murni POST/PUT & re-fetch tasks dari MySQL
 const submitForm = async () => {
   if (!form.value.nama_tugas) return
 
   submitting.value = true
+  const payload = {
+    nama_tugas: form.value.nama_tugas,
+    deskripsi: form.value.deskripsi || '',
+  }
+
   try {
     if (isEditing.value) {
-      await api.put(`/admin/tasks/${editingId.value}`, form.value)
-      
-      const idx = tasks.value.findIndex((t) => t.id === editingId.value)
-      if (idx !== -1) {
-        tasks.value[idx] = { ...tasks.value[idx], ...form.value }
-      }
+      await api.put(`/admin/tasks/${editingId.value}`, payload)
       closeModal()
       showToast('Tugas piket berhasil diperbarui!', 'success')
     } else {
-      const res = await api.post('/admin/tasks', form.value)
-      const newTask = res.data?.data || res.data || {
-        id: Date.now(),
-        ...form.value,
-      }
-      tasks.value.unshift(newTask)
+      await api.post('/admin/tasks', payload)
       closeModal()
       showToast('Tugas piket baru berhasil ditambahkan!', 'success')
     }
+    // Re-fetch tasks agar data di tabel ter-refresh secara real-time dari MySQL
+    await fetchTasks()
   } catch (err) {
-    console.warn('API submit fallback:', err)
-    if (isEditing.value) {
-      const idx = tasks.value.findIndex((t) => t.id === editingId.value)
-      if (idx !== -1) {
-        tasks.value[idx] = { ...tasks.value[idx], ...form.value }
-      }
-      closeModal()
-      showToast('Tugas piket berhasil diperbarui!', 'success')
-    } else {
-      tasks.value.unshift({
-        id: Date.now(),
-        ...form.value,
-      })
-      closeModal()
-      showToast('Tugas piket baru berhasil ditambahkan!', 'success')
-    }
+    console.error('API submit error:', err)
+    showToast('Gagal menyimpan tugas piket. Periksa koneksi/server.', 'error')
   } finally {
     submitting.value = false
   }
 }
 
-// Eksekusi Hapus Tugas via Custom Confirmation Modal
+// Eksekusi Hapus Tugas via DELETE & re-fetch tasks dari MySQL
 const confirmDeleteTask = async () => {
   if (!taskToDelete.value) return
 
@@ -549,14 +492,14 @@ const confirmDeleteTask = async () => {
   const targetId = taskToDelete.value.id
   try {
     await api.delete(`/admin/tasks/${targetId}`)
-    tasks.value = tasks.value.filter((t) => t.id !== targetId)
     closeDeleteModal()
     showToast('Tugas piket telah berhasil dihapus!', 'success')
+    // Re-fetch tasks agar data di tabel ter-refresh secara real-time dari MySQL
+    await fetchTasks()
   } catch (err) {
-    console.warn('API delete fallback:', err)
-    tasks.value = tasks.value.filter((t) => t.id !== targetId)
+    console.error('API delete error:', err)
     closeDeleteModal()
-    showToast('Tugas piket telah berhasil dihapus!', 'success')
+    showToast('Gagal menghapus tugas piket.', 'error')
   } finally {
     deleting.value = false
   }

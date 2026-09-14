@@ -3,7 +3,7 @@
     <!-- Admin Navbar Component -->
     <AdminNavbar />
 
-    <!-- Main Content Container (Single page flow, single window scrollbar) -->
+    <!-- Main Content Container -->
     <main class="max-w-7xl mx-auto px-6 md:px-12 py-8 w-full space-y-6">
       <!-- Top Info Bar: Real-time WIB Clock & Dashboard Overview -->
       <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-3 bg-white border border-slate-200/80 px-6 py-3.5 rounded-2xl shadow-xs">
@@ -12,7 +12,7 @@
           <span>Dashboard Overview</span>
         </div>
 
-        <!-- Dynamic Real-time Clock (WIB) dengan nama hari warna hijau (#00B775) -->
+        <!-- Dynamic Real-time Clock (WIB) -->
         <div class="flex items-center space-x-2 text-xs md:text-sm font-semibold text-slate-700">
           <Clock class="w-4 h-4 text-[#00B775]" />
           <span>
@@ -57,7 +57,10 @@
               </div>
               <div class="bg-rose-50/70 border border-rose-200/80 rounded-xl p-3">
                 <p class="text-xs font-medium text-rose-600">Sanksi Aktif</p>
-                <p class="text-2xl font-extrabold text-rose-600 mt-1">2</p>
+                <p class="text-2xl font-extrabold text-rose-600 mt-1">
+                  <span v-if="sanksiLoading" class="text-base text-slate-400">...</span>
+                  <span v-else>{{ activeSanksiCount }}</span>
+                </p>
               </div>
             </div>
           </div>
@@ -125,27 +128,28 @@
 
             <div>
               <h2 class="text-xl font-extrabold text-slate-900">Data Sanksi</h2>
-              <p class="text-slate-500 text-xs mt-0.5">Konfigurasi daftar sanksi dan poin pelanggaran.</p>
+              <p class="text-slate-500 text-xs mt-0.5">Konfigurasi daftar sanksi dan pelanggaran siswa.</p>
             </div>
 
             <div class="bg-amber-50/70 border border-amber-200/80 rounded-xl p-4 flex items-center justify-between">
               <div>
-                <p class="text-xs font-semibold text-slate-600">Total Kategori Sanksi</p>
-                <p class="text-xs text-slate-400">Jenis sanksi aktif</p>
+                <p class="text-xs font-semibold text-slate-600">Sanksi Belum Tuntas</p>
+                <p class="text-xs text-slate-400">Status 'belum' dituntaskan</p>
               </div>
               <div class="text-3xl font-extrabold text-amber-600">
-                7
+                <span v-if="sanksiLoading" class="text-base text-slate-400">...</span>
+                <span v-else>{{ activeSanksiCount }}</span>
               </div>
             </div>
           </div>
 
-          <button
-            @click="showDetailAlert('Data Sanksi')"
-            class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer"
+          <router-link
+            to="/admin/sanksi"
+            class="w-full bg-[#00B775] hover:bg-[#009d64] text-white py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs"
           >
-            <span>Lihat Detail</span>
+            <span>Kelola Data Sanksi</span>
             <ChevronRight class="w-4 h-4" />
-          </button>
+          </router-link>
         </div>
 
         <!-- 4. Data Jadwal Piket Card -->
@@ -236,13 +240,13 @@
               <!-- Action buttons -->
               <div class="grid grid-cols-2 gap-2 pt-1">
                 <button
-                  @click="approveProof"
+                  @click="showDetailAlert('Verifikasi Setuju')"
                   class="bg-[#00B775] hover:bg-[#009d64] text-white py-2 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer"
                 >
                   SETUJU
                 </button>
                 <button
-                  @click="rejectProof"
+                  @click="showDetailAlert('Verifikasi Tolak')"
                   class="bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer"
                 >
                   TOLAK
@@ -266,6 +270,7 @@
 
 <script setup>
 import { ref, onMounted, onUnmounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/utils/api'
 import AdminNavbar from '@/components/AdminNavbar.vue'
 import {
@@ -279,16 +284,20 @@ import {
   ChevronRight
 } from 'lucide-vue-next'
 
+const router = useRouter()
+
 const currentDayName = ref('')
 const formattedDateOnly = ref('')
 const formattedTimeOnly = ref('')
 const totalTasksCount = ref(0)
+const activeSanksiCount = ref(0)
 const tasksLoading = ref(false)
+const sanksiLoading = ref(false)
 let timer = null
 
 const dayNamesIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 
-// Update Real-time WIB Date & Time (Hari warna hijau)
+// Update Real-time WIB Date & Time
 const updateWibClock = () => {
   const now = new Date()
   const dayName = dayNamesIndo[now.getDay()]
@@ -306,7 +315,7 @@ const updateWibClock = () => {
   formattedTimeOnly.value = `${hh}:${min}:${ss}`
 }
 
-// Fetch Real Tasks Count from API GET /api/admin/tasks
+// Fetch Real Tasks Count from API GET /admin/tasks
 const fetchTotalTasks = async () => {
   tasksLoading.value = true
   try {
@@ -316,32 +325,47 @@ const fetchTotalTasks = async () => {
     } else if (res.data && res.data.data && Array.isArray(res.data.data)) {
       totalTasksCount.value = res.data.data.length
     } else {
-      totalTasksCount.value = 7
+      totalTasksCount.value = 0
     }
   } catch (err) {
-    console.warn('API /admin/tasks call failed, falling back to count 7:', err)
-    totalTasksCount.value = 7
+    console.error('API /admin/tasks error:', err)
+    totalTasksCount.value = 0
   } finally {
     tasksLoading.value = false
   }
 }
 
+// Fetch Active Sanctions Count (status 'belum') from API GET /admin/sanksi-siswa
+const fetchActiveSanksi = async () => {
+  sanksiLoading.value = true
+  try {
+    const res = await api.get('/admin/sanksi-siswa')
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+    const activeItems = list.filter(
+      (item) => item.status === 'belum' || item.status === 'BELUM' || item.status_penyelesaian === 'belum'
+    )
+    activeSanksiCount.value = activeItems.length
+  } catch (err) {
+    console.error('API /admin/sanksi-siswa error:', err)
+    activeSanksiCount.value = 0
+  } finally {
+    sanksiLoading.value = false
+  }
+}
+
 const showDetailAlert = (sectionName) => {
-  alert(`Halaman detail ${sectionName} sedang dalam pengembangan.`)
-}
-
-const approveProof = () => {
-  alert('Bukti piket telah DISETUJU!')
-}
-
-const rejectProof = () => {
-  alert('Bukti piket telah DITOLAK!')
+  if (sectionName === 'Data Sanksi') {
+    router.push('/admin/sanksi')
+  } else {
+    console.log(`Navigating to ${sectionName}`)
+  }
 }
 
 onMounted(() => {
   updateWibClock()
   timer = setInterval(updateWibClock, 1000)
   fetchTotalTasks()
+  fetchActiveSanksi()
 })
 
 onUnmounted(() => {

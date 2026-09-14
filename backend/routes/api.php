@@ -7,6 +7,7 @@ use App\Http\Controllers\Api\BuktiPiketController;
 use App\Http\Controllers\Api\JadwalPiketController;
 use App\Http\Controllers\Api\SanksiController;
 use App\Http\Controllers\Api\NotificationController;
+use App\Http\Controllers\Api\SiswaManagementController;
 
 /*
 |--------------------------------------------------------------------------
@@ -33,6 +34,8 @@ Route::middleware('auth:sanctum')->group(function () {
     |--------------------------------------------------------------------------
     */
     Route::middleware('role:admin')->prefix('admin')->group(function () {
+        // Management Siswa
+        Route::apiResource('siswa', SiswaManagementController::class);
         // Master Tasks (CRUD)
         Route::apiResource('tasks', TaskController::class);
 
@@ -43,6 +46,7 @@ Route::middleware('auth:sanctum')->group(function () {
         // Management Jadwal Piket
         Route::get('/jadwal-piket', [JadwalPiketController::class, 'index']);
         Route::post('/jadwal-piket', [JadwalPiketController::class, 'store']);
+        Route::put('/jadwal-piket/{id}', [JadwalPiketController::class, 'update']);
         Route::delete('/jadwal-piket/{id}', [JadwalPiketController::class, 'destroy']);
 
         // Master Sanksi

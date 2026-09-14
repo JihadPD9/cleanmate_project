@@ -60,6 +60,39 @@ class JadwalPiketController extends Controller
         ], 201);
     }
 
+    // Admin meng-edit jadwal piket siswa
+    public function update(Request $request, $id)
+    {
+        $jadwal = JadwalPiket::findOrFail($id);
+
+        $request->validate([
+            'user_id' => 'required|exists:users,id',
+            'hari'    => 'required|in:Senin,Selasa,Rabu,Kamis,Jumat',
+        ]);
+
+        // Cek apakah siswa sudah terdaftar di hari tersebut (selain jadwal yang sedang di-edit ini)
+        $exists = JadwalPiket::where('user_id', $request->user_id)
+            ->where('hari', $request->hari)
+            ->where('id', '!=', $id)
+            ->exists();
+
+        if ($exists) {
+            return response()->json([
+                'message' => 'Siswa tersebut sudah terdaftar di jadwal piket hari ' . $request->hari
+            ], 422);
+        }
+
+        $jadwal->update([
+            'user_id' => $request->user_id,
+            'hari'    => $request->hari,
+        ]);
+
+        return response()->json([
+            'message' => 'Jadwal piket berhasil diperbarui',
+            'data'    => $jadwal->load('user:id,name,email')
+        ]);
+    }
+
     // Admin menghapus siswa dari jadwal piket
     public function destroy($id)
     {

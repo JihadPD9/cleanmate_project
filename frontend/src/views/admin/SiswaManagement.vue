@@ -79,16 +79,16 @@
 
       <!-- Search, Filter & Total Bar -->
       <div class="bg-white border border-slate-200/80 rounded-2xl p-4 shadow-xs flex flex-col md:flex-row items-center justify-between gap-4">
-        <div class="relative w-full md:w-80">
+        <div class="relative w-full md:w-72">
           <Search class="w-5 h-5 absolute left-3.5 top-1/2 -translate-y-1/2 text-slate-400" />
           <input
             v-model="searchQuery"
             type="text"
-            placeholder="Cari nama, email, atau nomor absen..."
+            placeholder="Cari nama atau email..."
             class="w-full pl-11 pr-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs"
           />
         </div>
-        <div class="flex items-center space-x-3 w-full md:w-auto">
+        <div class="flex flex-wrap md:flex-nowrap items-center space-x-3 w-full md:w-auto">
           <!-- Filter Hari Piket -->
           <select
             v-model="hariFilter"
@@ -96,6 +96,15 @@
           >
             <option value="">Semua Hari Piket</option>
             <option v-for="h in hariList" :key="h" :value="h">{{ h }}</option>
+          </select>
+          <!-- Filter Status Sanksi -->
+          <select
+            v-model="sanksiFilter"
+            class="flex-1 md:flex-none px-3 py-2.5 bg-white border border-slate-200 rounded-xl text-xs font-semibold text-slate-700 focus:outline-none focus:ring-2 focus:ring-[#00B775] cursor-pointer shadow-xs"
+          >
+            <option value="">Semua Status Sanksi</option>
+            <option value="ada">Ada Sanksi Aktif</option>
+            <option value="bersih">Bersih (Tanpa Sanksi)</option>
           </select>
           <div class="text-xs font-semibold text-slate-500 shrink-0">
             Total: <span class="text-[#00B775] font-bold text-sm">{{ filteredSiswa.length }}</span>
@@ -132,7 +141,6 @@
                 <tr>
                   <th class="px-5 py-4 w-12">No</th>
                   <th class="px-5 py-4">Siswa</th>
-                  <th class="px-5 py-4">No. Absen</th>
                   <th class="px-5 py-4">Hari Piket</th>
                   <th class="px-5 py-4 text-center">Sanksi Aktif</th>
                   <th class="px-5 py-4 text-center">Status</th>
@@ -159,9 +167,6 @@
                         <p class="text-xs text-slate-400 font-medium">{{ siswa.email }}</p>
                       </div>
                     </div>
-                  </td>
-                  <td class="px-5 py-4 font-semibold text-slate-700">
-                    {{ siswa.no_absen || '-' }}
                   </td>
                   <td class="px-5 py-4">
                     <span v-if="siswa.hari_piket" class="inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-full border bg-emerald-100 text-emerald-700 border-emerald-200 uppercase tracking-wide">
@@ -265,28 +270,16 @@
           </div>
 
           <form @submit.prevent="submitForm" class="space-y-4">
-            <!-- Grid: Nama & No Absen -->
-            <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div class="space-y-1.5">
-                <label class="block text-slate-800 font-bold text-sm">Nama Lengkap <span class="text-rose-500">*</span></label>
-                <input
-                  v-model="form.name"
-                  type="text"
-                  required
-                  placeholder="Contoh: Jihad Al-Aqsha"
-                  class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs"
-                />
-              </div>
-              <div class="space-y-1.5">
-                <label class="block text-slate-800 font-bold text-sm">No. Absen</label>
-                <input
-                  v-model.number="form.no_absen"
-                  type="number"
-                  min="1"
-                  placeholder="Contoh: 12"
-                  class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs"
-                />
-              </div>
+            <!-- Nama Lengkap -->
+            <div class="space-y-1.5">
+              <label class="block text-slate-800 font-bold text-sm">Nama Lengkap <span class="text-rose-500">*</span></label>
+              <input
+                v-model="form.name"
+                type="text"
+                required
+                placeholder="Contoh: Jihad Al-Aqsha"
+                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs"
+              />
             </div>
 
             <!-- Email -->
@@ -321,18 +314,6 @@
                   <EyeOff v-else class="w-4 h-4" />
                 </button>
               </div>
-            </div>
-
-            <!-- Hari Piket -->
-            <div class="space-y-1.5">
-              <label class="block text-slate-800 font-bold text-sm">Hari Piket</label>
-              <select
-                v-model="form.hari_piket"
-                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs cursor-pointer"
-              >
-                <option value="">-- Belum Ditentukan --</option>
-                <option v-for="h in hariList" :key="h" :value="h">{{ h }}</option>
-              </select>
             </div>
 
             <!-- Status Aktif (hanya saat edit) -->
@@ -402,11 +383,7 @@
           </div>
 
           <!-- Detail Info Grid -->
-          <div class="grid grid-cols-2 gap-3">
-            <div class="bg-slate-50 rounded-2xl p-4 space-y-1">
-              <p class="text-[10px] font-bold uppercase tracking-wide text-slate-500">No. Absen</p>
-              <p class="text-lg font-extrabold text-slate-900">{{ selectedSiswa.no_absen || '-' }}</p>
-            </div>
+          <div class="grid grid-cols-3 gap-3">
             <div class="bg-slate-50 rounded-2xl p-4 space-y-1">
               <p class="text-[10px] font-bold uppercase tracking-wide text-slate-500">Hari Piket</p>
               <p class="text-lg font-extrabold text-slate-900">{{ selectedSiswa.hari_piket || '-' }}</p>
@@ -512,6 +489,7 @@ const submitting = ref(false)
 const deleting = ref(false)
 const searchQuery = ref('')
 const hariFilter = ref('')
+const sanksiFilter = ref('')
 const currentPage = ref(1)
 const itemsPerPage = 10
 const hariList = ['Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat']
@@ -531,7 +509,6 @@ const form = ref({
   email: '',
   password: '',
   no_absen: '',
-  hari_piket: '',
   is_active: true,
 })
 
@@ -589,6 +566,11 @@ const filteredSiswa = computed(() => {
   if (hariFilter.value) {
     list = list.filter((s) => s.hari_piket === hariFilter.value)
   }
+  if (sanksiFilter.value === 'ada') {
+    list = list.filter((s) => (s.sanksi_aktif_count ?? s.active_sanctions_count ?? 0) > 0)
+  } else if (sanksiFilter.value === 'bersih') {
+    list = list.filter((s) => (s.sanksi_aktif_count ?? s.active_sanctions_count ?? 0) === 0)
+  }
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
     list = list.filter(
@@ -612,7 +594,7 @@ const endIdx = computed(() => Math.min(currentPage.value * itemsPerPage, filtere
 const activeCount = computed(() => siswaList.value.filter((s) => s.is_active ?? true).length)
 const sanksiAktifCount = computed(() => siswaList.value.reduce((acc, s) => acc + (s.sanksi_aktif_count ?? s.active_sanctions_count ?? 0), 0))
 
-watch([searchQuery, hariFilter], () => { currentPage.value = 1 })
+watch([searchQuery, hariFilter, sanksiFilter], () => { currentPage.value = 1 })
 
 // ========================
 // API CALLS
@@ -620,18 +602,53 @@ watch([searchQuery, hariFilter], () => { currentPage.value = 1 })
 const fetchSiswa = async () => {
   loading.value = true
   try {
-    const [resSiswa, resSanksi] = await Promise.allSettled([
+    const [resSiswa, resSanksi, resJadwal] = await Promise.allSettled([
       api.get('/admin/siswa'),
-      api.get('/admin/sanksi-siswa')
+      api.get('/admin/sanksi-siswa'),
+      api.get('/admin/jadwal-piket')
     ])
 
-    const rawSiswa = resSiswa.status === 'fulfilled'
-      ? (Array.isArray(resSiswa.value.data) ? resSiswa.value.data : (resSiswa.value.data?.data ?? []))
-      : []
+    let rawSiswa = []
+    if (resSiswa.status === 'fulfilled') {
+      const resData = resSiswa.value?.data
+      if (Array.isArray(resData)) {
+        rawSiswa = resData
+      } else if (resData && Array.isArray(resData.data)) {
+        rawSiswa = resData.data
+      } else if (resData && typeof resData === 'object') {
+        rawSiswa = resData.siswa || resData.users || []
+      }
+    }
 
-    const rawSanksi = resSanksi.status === 'fulfilled'
-      ? (Array.isArray(resSanksi.value.data) ? resSanksi.value.data : (resSanksi.value.data?.data ?? []))
-      : []
+    let rawSanksi = []
+    if (resSanksi.status === 'fulfilled') {
+      const resData = resSanksi.value?.data
+      if (Array.isArray(resData)) {
+        rawSanksi = resData
+      } else if (resData && Array.isArray(resData.data)) {
+        rawSanksi = resData.data
+      }
+    }
+
+    let rawJadwal = []
+    if (resJadwal.status === 'fulfilled') {
+      const resData = resJadwal.value?.data
+      if (Array.isArray(resData)) {
+        rawJadwal = resData
+      } else if (resData && Array.isArray(resData.data)) {
+        rawJadwal = resData.data
+      }
+    }
+
+    // Map user_id -> hari_piket dari jadwal piket
+    const userHariMap = {}
+    rawJadwal.forEach((j) => {
+      const uid = j.user_id || j.user?.id || j.siswa?.id
+      const h = j.hari_piket || j.hari
+      if (uid && h) {
+        userHariMap[uid] = h
+      }
+    })
 
     // Hitung jumlah sanksi aktif (status 'belum') per user_id
     const sanksiCountMap = {}
@@ -645,11 +662,25 @@ const fetchSiswa = async () => {
       }
     })
 
-    // Petakan sanksi_aktif_count ke data siswa
-    siswaList.value = rawSiswa.map((s) => ({
-      ...s,
-      sanksi_aktif_count: sanksiCountMap[s.id] || s.sanksi_aktif_count || s.active_sanctions_count || 0
-    }))
+    // Petakan sanksi_aktif_count dan hari_piket dari relasi backend & jadwal map
+    const mappedSiswa = rawSiswa.map((s) => {
+      const extractedHari = s.hari_piket ||
+        userHariMap[s.id] ||
+        s.jadwal_piket?.hari_piket || s.jadwal_piket?.hari ||
+        s.jadwalPiket?.hari_piket || s.jadwalPiket?.hari ||
+        (Array.isArray(s.jadwal_piket) && s.jadwal_piket[0]?.hari_piket) ||
+        (Array.isArray(s.jadwal_piket) && s.jadwal_piket[0]?.hari) ||
+        ''
+
+      return {
+        ...s,
+        hari_piket: extractedHari,
+        sanksi_aktif_count: sanksiCountMap[s.id] || s.sanksi_aktif_count || s.active_sanctions_count || 0
+      }
+    })
+
+    // Urutkan siswa berdasarkan ID secara Ascending (Ahmad Fadilah ID 2 di paling atas)
+    siswaList.value = mappedSiswa.sort((a, b) => Number(a.id) - Number(b.id))
   } catch (err) {
     showToast(extractErrorMessage(err), 'error')
     siswaList.value = []
@@ -665,7 +696,7 @@ const openAddModal = () => {
   isEditing.value = false
   editingId.value = null
   showPassword.value = false
-  form.value = { name: '', email: '', password: '', no_absen: '', hari_piket: '', is_active: true }
+  form.value = { name: '', email: '', password: '', no_absen: '', is_active: true }
   showFormModal.value = true
 }
 
@@ -678,7 +709,6 @@ const openEditModal = (siswa) => {
     email: siswa.email || '',
     password: '',
     no_absen: siswa.no_absen || '',
-    hari_piket: siswa.hari_piket || '',
     is_active: siswa.is_active ?? true,
   }
   showFormModal.value = true
@@ -707,13 +737,14 @@ const closeDeleteModal = () => {
 const submitForm = async () => {
   submitting.value = true
 
-  // Buat payload, hapus password jika kosong saat edit
+  // Buat payload
   const payload = { ...form.value }
   if (isEditing.value && !payload.password) {
     delete payload.password
   }
-  if (!payload.no_absen) delete payload.no_absen
-  if (!payload.hari_piket) delete payload.hari_piket
+  if (payload.no_absen === '' || payload.no_absen === null) {
+    delete payload.no_absen
+  }
 
   try {
     if (isEditing.value) {
@@ -724,10 +755,11 @@ const submitForm = async () => {
       showToast('Siswa baru berhasil ditambahkan!', 'success')
     }
     closeFormModal()
-    await fetchSiswa()
   } catch (err) {
     showToast(extractErrorMessage(err), 'error')
   } finally {
+    // Selalu panggil fetchSiswa() agar UI tidak menjadi kosong jika terjadi penanganan parsial
+    await fetchSiswa()
     submitting.value = false
   }
 }

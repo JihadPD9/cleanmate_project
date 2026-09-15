@@ -9,6 +9,7 @@ import SiswaDashboard from '@/views/siswa/Dashboard.vue'
 import SanksiManagement from '@/views/admin/SanksiManagement.vue'
 import SiswaManagement from '@/views/admin/SiswaManagement.vue'
 import JadwalManagement from '@/views/admin/JadwalManagement.vue'
+import BuktiPiketManagement from '@/views/admin/BuktiPiketManagement.vue'
 import UploadBuktiPage from '@/views/siswa/UploadBuktiPage.vue'
 
 const routes = [
@@ -62,6 +63,12 @@ const routes = [
     path: '/admin/jadwal',
     name: 'AdminJadwal',
     component: JadwalManagement,
+    meta: { requiresAuth: true, role: 'admin' },
+  },
+  {
+    path: '/admin/bukti-piket',
+    name: 'AdminBuktiPiket',
+    component: BuktiPiketManagement,
     meta: { requiresAuth: true, role: 'admin' },
   },
   {

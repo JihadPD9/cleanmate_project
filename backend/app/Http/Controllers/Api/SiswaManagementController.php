@@ -13,6 +13,7 @@ class SiswaManagementController extends Controller
     public function index()
     {
         $siswa = User::where('role', 'siswa')
+            ->with(['jadwalPikets::id,user_id,hari']) // Mengambil data jadwal piket terkait
             ->select('id', 'name', 'email', 'created_at')
             ->latest()
             ->get();

@@ -177,7 +177,6 @@
                 </div>
                 <div class="min-w-0">
                   <p class="text-xs font-bold text-slate-800 truncate">{{ getSiswaName(item) }}</p>
-                  <p class="text-[10px] text-slate-400">No. {{ item.siswa?.no_absen ?? item.no_absen ?? '-' }}</p>
                 </div>
               </div>
               <div class="flex items-center space-x-1 opacity-0 group-hover:opacity-100 transition-opacity shrink-0">
@@ -204,8 +203,6 @@
                 <tr>
                   <th class="px-5 py-4 w-12">No</th>
                   <th class="px-5 py-4">Siswa</th>
-                  <th class="px-5 py-4">No. Absen</th>
-                  <th class="px-5 py-4">Hari Piket</th>
                   <th class="px-5 py-4 w-28 text-center">Aksi</th>
                 </tr>
               </thead>
@@ -228,14 +225,6 @@
                         <p class="text-xs text-slate-400">{{ item.siswa?.email ?? item.email ?? '' }}</p>
                       </div>
                     </div>
-                  </td>
-                  <td class="px-5 py-4 font-semibold text-slate-700">
-                    {{ item.siswa?.no_absen ?? item.no_absen ?? '-' }}
-                  </td>
-                  <td class="px-5 py-4">
-                    <span :class="['inline-block text-[10px] font-extrabold px-2.5 py-1 rounded-full border uppercase tracking-wide', todayName === (item.hari_piket ?? item.hari) ? 'bg-[#00B775] text-white border-[#00B775]' : 'bg-emerald-100 text-emerald-800 border-emerald-200']">
-                      {{ item.hari_piket ?? item.hari }}
-                    </span>
                   </td>
                   <td class="px-5 py-4 text-center">
                     <div class="flex items-center justify-center space-x-1.5">

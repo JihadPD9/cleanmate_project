@@ -254,46 +254,68 @@
             </div>
 
             <!-- Proof Item -->
-            <div class="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-3">
-              <p class="text-xs font-bold text-slate-700 flex items-center justify-between">
-                <span>Bukti Terbaru:</span>
-                <span class="text-[#00B775]">Jumat, 04-12-2026</span>
-              </p>
+            <div v-if="buktiLoading" class="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 flex justify-center py-6">
+              <span class="text-xs text-slate-400 font-medium animate-pulse">Memuat bukti terbaru...</span>
+            </div>
+            <div v-else-if="!latestBuktiPiket" class="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 flex justify-center py-6">
+              <span class="text-xs text-slate-400 font-medium italic">Tidak ada bukti pending</span>
+            </div>
+            <div v-else class="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-3">
+              <div class="flex items-start justify-between">
+                <div>
+                  <p class="text-xs font-bold text-slate-700">{{ latestBuktiPiket.siswa?.name || 'Siswa' }}</p>
+                  <p class="text-[10px] text-slate-500">{{ formatDate(latestBuktiPiket.created_at) }}</p>
+                </div>
+                <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full border bg-amber-100 text-amber-700 border-amber-200">
+                  PENDING
+                </span>
+              </div>
 
               <div class="grid grid-cols-2 gap-2">
-                <div class="bg-slate-200/80 rounded-xl h-20 flex items-center justify-center text-slate-500 text-xs font-bold shadow-inner">
-                  Foto 1
+                <a v-if="latestBuktiPiket.foto_1" :href="getImageUrl(latestBuktiPiket.foto_1)" target="_blank" class="block aspect-square bg-slate-200/80 rounded-xl overflow-hidden shadow-inner hover:opacity-90 transition">
+                  <img :src="getImageUrl(latestBuktiPiket.foto_1)" alt="Foto 1" class="w-full h-full object-cover" />
+                </a>
+                <div v-else class="aspect-square bg-slate-200/80 rounded-xl flex items-center justify-center text-slate-400 text-xs shadow-inner">
+                  -
                 </div>
-                <div class="bg-slate-200/80 rounded-xl h-20 flex items-center justify-center text-slate-500 text-xs font-bold shadow-inner">
-                  Foto 2
+                
+                <a v-if="latestBuktiPiket.foto_2" :href="getImageUrl(latestBuktiPiket.foto_2)" target="_blank" class="block aspect-square bg-slate-200/80 rounded-xl overflow-hidden shadow-inner hover:opacity-90 transition">
+                  <img :src="getImageUrl(latestBuktiPiket.foto_2)" alt="Foto 2" class="w-full h-full object-cover" />
+                </a>
+                <div v-else class="aspect-square bg-slate-200/80 rounded-xl flex items-center justify-center text-slate-400 text-xs shadow-inner">
+                  -
                 </div>
               </div>
 
               <!-- Action buttons -->
               <div class="grid grid-cols-2 gap-2 pt-1">
                 <button
-                  @click="showDetailAlert('Verifikasi Setuju')"
-                  class="bg-[#00B775] hover:bg-[#009d64] text-white py-2 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer"
+                  @click="verifyBukti(latestBuktiPiket.id, 'approved')"
+                  :disabled="verifyingId === latestBuktiPiket.id"
+                  class="bg-[#00B775] hover:bg-[#009d64] text-white py-2 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer disabled:opacity-70 flex justify-center items-center"
                 >
-                  SETUJU
+                  <span v-if="verifyingId === latestBuktiPiket.id && verifyStatus === 'approved'" class="animate-pulse">...</span>
+                  <span v-else>SETUJU</span>
                 </button>
                 <button
-                  @click="showDetailAlert('Verifikasi Tolak')"
-                  class="bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer"
+                  @click="verifyBukti(latestBuktiPiket.id, 'rejected')"
+                  :disabled="verifyingId === latestBuktiPiket.id"
+                  class="bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer disabled:opacity-70 flex justify-center items-center"
                 >
-                  TOLAK
+                  <span v-if="verifyingId === latestBuktiPiket.id && verifyStatus === 'rejected'" class="animate-pulse">...</span>
+                  <span v-else>TOLAK</span>
                 </button>
               </div>
             </div>
           </div>
 
-          <button
-            @click="showDetailAlert('Data Bukti Piket')"
+          <router-link
+            to="/admin/bukti-piket"
             class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-semibold text-xs transition-all duration-200 flex items-center justify-center space-x-1.5 shadow-xs cursor-pointer"
           >
             <span>Lihat Semua Bukti</span>
             <ChevronRight class="w-4 h-4" />
-          </button>
+          </router-link>
         </div>
       </div>
     </main>
@@ -435,6 +457,55 @@ const fetchJadwalDashboard = async () => {
   }
 }
 
+const latestBuktiPiket = ref(null)
+const buktiLoading = ref(false)
+const verifyingId = ref(null)
+const verifyStatus = ref('')
+
+const getImageUrl = (path) => {
+  if (!path) return ''
+  return `http://127.0.0.1:8000/storage/${path}`
+}
+
+const formatDate = (dateString) => {
+  if (!dateString) return '-'
+  const date = new Date(dateString)
+  return new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(date)
+}
+
+const fetchBuktiTerbaru = async () => {
+  buktiLoading.value = true
+  try {
+    const res = await api.get('/admin/bukti-piket')
+    const list = Array.isArray(res.data) ? res.data : (res.data?.data ?? [])
+    // Ambil bukti yang statusnya 'pending'
+    const pendingList = list.filter(b => b.status_approval === 'pending')
+    // Asumsi list terurut dari terbaru, ambil index 0
+    latestBuktiPiket.value = pendingList.length > 0 ? pendingList[0] : null
+  } catch (err) {
+    console.error('API /admin/bukti-piket error:', err)
+    latestBuktiPiket.value = null
+  } finally {
+    buktiLoading.value = false
+  }
+}
+
+const verifyBukti = async (id, status) => {
+  verifyingId.value = id
+  verifyStatus.value = status
+  try {
+    await api.patch(`/admin/bukti-piket/${id}/status`, { status_approval: status })
+    await fetchBuktiTerbaru()
+  } catch (err) {
+    console.error('Gagal memverifikasi bukti:', err)
+    alert('Terjadi kesalahan saat memverifikasi bukti piket.')
+  } finally {
+    verifyingId.value = null
+    verifyStatus.value = ''
+  }
+}
+
+
 const showDetailAlert = (sectionName) => {
   if (sectionName === 'Data Sanksi') {
     router.push('/admin/sanksi')
@@ -452,6 +523,7 @@ onMounted(() => {
   fetchActiveSanksi()
   fetchTotalSiswa()
   fetchJadwalDashboard()
+  fetchBuktiTerbaru()
 })
 
 onUnmounted(() => {

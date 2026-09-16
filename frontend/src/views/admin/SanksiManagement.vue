@@ -523,13 +523,14 @@
                   v-for="tipe in ['individu', 'kelompok']"
                   :key="tipe"
                   :class="[
-                    'flex-1 flex items-center justify-center space-x-2 p-3 rounded-xl border-2 cursor-pointer font-bold text-sm transition-all',
-                    siswaForm.tipe === tipe
+                    'flex-1 flex items-center justify-center space-x-2 p-3 rounded-xl border-2 font-bold text-sm transition-all',
+                    siswaIsEditing ? 'opacity-60 cursor-not-allowed bg-slate-100 border-slate-200 text-slate-500' : 'cursor-pointer',
+                    !siswaIsEditing && siswaForm.tipe === tipe
                       ? 'border-[#00B775] bg-emerald-50 text-[#00B775]'
-                      : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300'
+                      : (siswaIsEditing && siswaForm.tipe === tipe ? 'border-slate-300 bg-slate-200/80 text-slate-700' : 'border-slate-200 bg-white text-slate-600 hover:border-slate-300')
                   ]"
                 >
-                  <input type="radio" v-model="siswaForm.tipe" :value="tipe" class="sr-only" />
+                  <input type="radio" v-model="siswaForm.tipe" :value="tipe" :disabled="siswaIsEditing" class="sr-only" />
                   <User v-if="tipe === 'individu'" class="w-4 h-4" />
                   <Users v-else class="w-4 h-4" />
                   <span class="capitalize">{{ tipe }}</span>
@@ -549,8 +550,14 @@
                 </label>
                 <select
                   v-model="siswaForm.user_id"
+                  :disabled="siswaIsEditing"
                   required
-                  class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs cursor-pointer"
+                  :class="[
+                    'w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none transition-all shadow-xs',
+                    siswaIsEditing
+                      ? 'bg-slate-100 border-slate-300 text-slate-600 font-semibold cursor-not-allowed opacity-80'
+                      : 'bg-white border-slate-200 text-slate-800 focus:ring-2 focus:ring-[#00B775] focus:border-transparent cursor-pointer'
+                  ]"
                 >
                   <option value="" disabled>-- Pilih Siswa --</option>
                   <option v-for="s in daftarSiswa" :key="s.id" :value="s.id">
@@ -565,8 +572,14 @@
                 </label>
                 <select
                   v-model="siswaForm.hari"
+                  :disabled="siswaIsEditing"
                   required
-                  class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs cursor-pointer"
+                  :class="[
+                    'w-full px-4 py-2.5 border rounded-xl text-sm focus:outline-none transition-all shadow-xs',
+                    siswaIsEditing
+                      ? 'bg-slate-100 border-slate-300 text-slate-600 font-semibold cursor-not-allowed opacity-80'
+                      : 'bg-white border-slate-200 text-slate-800 focus:ring-2 focus:ring-[#00B775] focus:border-transparent cursor-pointer'
+                  ]"
                 >
                   <option value="" disabled>-- Pilih Hari --</option>
                   <option v-for="h in hariList" :key="h" :value="h">{{ h }}</option>
@@ -935,14 +948,19 @@ const closeSiswaModal = () => { showSiswaModal.value = false }
 
 const submitSiswaForm = async () => {
   submittingSiswa.value = true
-  const payload = {
-    tipe_sanksi: siswaForm.value.tipe,
-    sanksi_id: siswaForm.value.sanksi_id,
-    alasan: siswaForm.value.alasan,
-    ...(siswaForm.value.tipe === 'individu'
-      ? { user_id: siswaForm.value.user_id }
-      : { hari: siswaForm.value.hari })
-  }
+  const payload = siswaIsEditing.value
+    ? {
+        sanksi_id: siswaForm.value.sanksi_id,
+        alasan: siswaForm.value.alasan
+      }
+    : {
+        tipe_sanksi: siswaForm.value.tipe,
+        sanksi_id: siswaForm.value.sanksi_id,
+        alasan: siswaForm.value.alasan,
+        ...(siswaForm.value.tipe === 'individu'
+          ? { user_id: siswaForm.value.user_id }
+          : { hari: siswaForm.value.hari })
+      }
 
   try {
     if (siswaIsEditing.value) {

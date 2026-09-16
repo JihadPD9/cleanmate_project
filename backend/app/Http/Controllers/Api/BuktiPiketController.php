@@ -6,13 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Models\BuktiPiket;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
+use Carbon\Carbon;
 
 class BuktiPiketController extends Controller
 {
     // Mengambil semua data bukti piket (untuk admin)
     public function index()
     {
-        $bukti = BuktiPiket::with(['user', 'tasks'])->latest()->get();
+        $bukti = BuktiPiket::with(['user:id,name,email', 'tasks'])->latest()->get();
 
         return response()->json(['data' => $bukti]);
     }
@@ -28,6 +29,23 @@ class BuktiPiketController extends Controller
         return response()->json(['data' => $bukti]);
     }
 
+    // Mengambil status bukti piket kelompok hari ini (untuk Dashboard Siswa)
+    public function todayStatus(Request $request)
+    {
+        $today = Carbon::today()->toDateString();
+
+        // Cari bukti piket kelompok yang paling terbaru untuk hari ini
+        $buktiHariIni = BuktiPiket::with(['user:id,name', 'tasks'])
+            ->whereDate('tanggal', $today)
+            ->latest()
+            ->first();
+
+        return response()->json([
+            'has_uploaded' => $buktiHariIni ? true : false,
+            'data'         => $buktiHariIni
+        ]);
+    }
+
     // Siswa upload bukti piket
     public function store(Request $request)
     {
@@ -39,6 +57,23 @@ class BuktiPiketController extends Controller
             'tasks'     => 'required|array', // Array ID task yang dikerjakan
             'tasks.*'   => 'exists:tasks,id',
         ]);
+
+        // Proteksi Kelompok: Cek apakah hari ini sudah ada bukti piket kelompok yang 'pending' atau 'approved'
+        $existingBukti = BuktiPiket::whereDate('tanggal', $request->tanggal)
+            ->whereIn('status_approval', ['pending', 'approved'])
+            ->with('user:id,name')
+            ->first();
+
+        if ($existingBukti) {
+            $uploaderName = $existingBukti->user ? $existingBukti->user->name : 'Siswa lain';
+            $statusMsg = $existingBukti->status_approval === 'approved' 
+                ? 'sudah disetujui oleh Admin.' 
+                : 'sedang menunggu verifikasi Admin.';
+
+            return response()->json([
+                'message' => "Bukti piket kelompok hari ini sudah diunggah oleh {$uploaderName} dan {$statusMsg}"
+            ], 422);
+        }
 
         // Upload foto
         $foto1Path = $request->file('foto_1')->store('bukti_piket', 'public');

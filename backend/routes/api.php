@@ -73,6 +73,7 @@ Route::middleware('auth:sanctum')->group(function () {
         Route::get('/tasks', [TaskController::class, 'index']);
 
         // Bukti Piket
+        Route::get('/bukti-piket/today', [BuktiPiketController::class, 'todayStatus']); // <-- TAMBAHAN: Status Bukti Piket Hari Ini
         Route::get('/bukti-piket', [BuktiPiketController::class, 'me']);
         Route::post('/bukti-piket', [BuktiPiketController::class, 'store']);
 

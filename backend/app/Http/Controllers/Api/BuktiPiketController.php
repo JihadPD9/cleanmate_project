@@ -55,7 +55,7 @@ class BuktiPiketController extends Controller
             'foto_2'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
             'deskripsi' => 'nullable|string',
             'tasks'     => 'required', // Array ID task yang dikerjakan
-            'tasks.*'   => 'exists:tasks,id',
+            'tasks.*'   => 'integer|exists:tasks,id',
         ]);
 
         // Proteksi Kelompok: Cek apakah hari ini sudah ada bukti piket kelompok yang 'pending' atau 'approved'

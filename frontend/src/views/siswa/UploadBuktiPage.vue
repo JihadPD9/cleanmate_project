@@ -312,6 +312,7 @@
 
 <script setup>
 import { ref, computed, onMounted } from 'vue'
+import { useRouter } from 'vue-router'
 import api from '@/utils/api'
 import { useAuthStore } from '@/stores/auth'
 import SiswaNavbar from '@/components/SiswaNavbar.vue'
@@ -330,6 +331,7 @@ import {
   History
 } from 'lucide-vue-next'
 
+const router = useRouter()
 const authStore = useAuthStore()
 
 const currentDayName = ref('Kamis')
@@ -340,7 +342,7 @@ const showInboxModal = ref(false)
 const showHistoryModal = ref(false)
 
 const availableTasks = ref([])
-const selectedTaskIds = ref([1, 2])
+const selectedTaskIds = ref([])
 const uploadedFiles = ref([])
 const catatan = ref('')
 
@@ -387,23 +389,36 @@ const updateDateInfo = () => {
   formattedDate.value = `${dd}-${mm}-${yyyy}`
 }
 
-// Fetch Tasks from API / Database
+const submitting = ref(false)
+
+// Fetch Tasks from API / Database Real
 const fetchTasks = async () => {
   loadingTasks.value = true
   try {
-    const res = await api.get('/admin/tasks')
+    const res = await api.get('/siswa/tasks')
     if (res.data && Array.isArray(res.data)) {
       availableTasks.value = res.data
     } else if (res.data && res.data.data && Array.isArray(res.data.data)) {
       availableTasks.value = res.data.data
     } else {
-      loadFallbackTasks()
+      // Fallback endpoint jika beda route
+      const resAlt = await api.get('/admin/tasks')
+      availableTasks.value = Array.isArray(resAlt.data) ? resAlt.data : (resAlt.data?.data || [])
     }
   } catch (err) {
-    console.warn('API fetch tasks fallback:', err)
-    loadFallbackTasks()
+    try {
+      const resAlt = await api.get('/admin/tasks')
+      availableTasks.value = Array.isArray(resAlt.data) ? resAlt.data : (resAlt.data?.data || [])
+    } catch (e) {
+      console.warn('API fetch tasks fallback:', err)
+      loadFallbackTasks()
+    }
   } finally {
     loadingTasks.value = false
+    // Pre-select first task if available and none currently selected
+    if (availableTasks.value.length > 0 && selectedTaskIds.value.length === 0) {
+      selectedTaskIds.value = [availableTasks.value[0].id]
+    }
   }
 }
 
@@ -453,8 +468,85 @@ const showToast = (message, type = 'info') => {
   }, 4000)
 }
 
-const handleFormSubmit = () => {
-  showToast('Fitur submit belum diaktifkan (Form UI Peninjauan).', 'info')
+// Real Multipart Submit to POST /api/siswa/bukti-piket
+const handleFormSubmit = async () => {
+  if (selectedTaskIds.value.length === 0) {
+    showToast('Pilih setidaknya satu tugas piket yang diselesaikan.', 'error')
+    return
+  }
+
+  if (uploadedFiles.value.length === 0) {
+    showToast('Wajib mengunggah minimal 1 foto bukti piket.', 'error')
+    return
+  }
+
+  submitting.value = true
+
+  // Format tanggal YYYY-MM-DD
+  const now = new Date()
+  const yyyy = now.getFullYear()
+  const mm = String(now.getMonth() + 1).padStart(2, '0')
+  const dd = String(now.getDate()).padStart(2, '0')
+  const formattedDateIso = `${yyyy}-${mm}-${dd}`
+
+  const formData = new FormData()
+  formData.append('foto_1', uploadedFiles.value[0].file)
+  if (uploadedFiles.value.length > 1) {
+    formData.append('foto_2', uploadedFiles.value[1].file)
+  }
+  formData.append('deskripsi', catatan.value || 'Bukti piket kelompok kelas.')
+  formData.append('tanggal', formattedDateIso)
+
+  // Append tasks[] array (only IDs that actually exist in availableTasks)
+  const validTaskIds = availableTasks.value.map((t) => Number(t.id))
+  selectedTaskIds.value
+    .filter((id) => id !== null && id !== undefined && id !== '')
+    .map((id) => Number(id))
+    .filter((numId) => validTaskIds.length === 0 || validTaskIds.includes(numId))
+    .forEach((numId) => {
+      formData.append('tasks[]', numId)
+    })
+
+  try {
+    await api.post('/siswa/bukti-piket', formData, {
+      headers: {
+        'Content-Type': 'multipart/form-data'
+      }
+    })
+
+    showToast('Bukti piket kelompok berhasil dikirim!', 'success')
+
+    setTimeout(() => {
+      router.push('/siswa/dashboard')
+    }, 1200)
+  } catch (err) {
+    console.error('Error submit bukti piket:', err)
+    if (err.response) {
+      const data = err.response.data
+      let errorMsg = ''
+
+      if (data?.errors && typeof data.errors === 'object') {
+        const messages = Object.values(data.errors).flat()
+        if (messages.length > 0) {
+          errorMsg = messages.join(' | ')
+        }
+      }
+
+      if (!errorMsg && data?.message) {
+        errorMsg = data.message
+      }
+
+      if (!errorMsg) {
+        errorMsg = 'Gagal mengirim bukti piket. Silakan periksa kembali data Anda.'
+      }
+
+      showToast(errorMsg, 'error')
+    } else {
+      showToast('Gagal terhubung ke server. Periksa koneksi internet Anda.', 'error')
+    }
+  } finally {
+    submitting.value = false
+  }
 }
 
 onMounted(() => {

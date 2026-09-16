@@ -89,7 +89,7 @@
                   <User class="w-4 h-4 text-[#00B775]" />
                 </div>
                 <span class="font-bold text-slate-900 text-sm sm:text-base">
-                  {{ officer.name || officer.nama_siswa || officer }}
+                  {{ officer.user?.name || officer.siswa?.name || officer.user?.nama || officer.name || officer.nama || officer }}
                 </span>
                 <span v-if="isCurrentStudent(officer)" class="ml-auto text-[10px] font-extrabold uppercase bg-emerald-100 text-[#00B775] px-2.5 py-1 rounded-full border border-emerald-200">
                   Anda
@@ -100,7 +100,7 @@
         </div>
 
         <!-- Right Card: Upload Bukti Piket Action Card / Status Info Card -->
-        <!-- Option 0: Loading State (Mencegah Flashing / Salah Tampil Card Saat Fetching Data) -->
+        <!-- Option 0: Loading State -->
         <div
           v-if="loadingSchedule && todayDutyOfficers.length === 0"
           class="bg-white border-2 border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col items-center justify-center text-center py-16 space-y-3"
@@ -109,12 +109,139 @@
           <p class="text-xs font-extrabold text-slate-400">Memuat status piket...</p>
         </div>
 
-        <!-- Option A: Jika Hari Ini Adalah Jadwal Piket Siswa -->
+        <!-- Option A: Jika Bukti Piket Kelompok Hari Ini Sudah Di-upload (has_uploaded === true) -->
+        <!-- a. Status Pending (Menunggu Verifikasi) -->
+        <div
+          v-else-if="todayStatus.has_uploaded && (todayStatus.status_approval === 'pending' || todayStatus.status_approval === 'PENDING')"
+          class="bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-sky-500/25 flex flex-col justify-between text-left space-y-6 relative overflow-hidden group"
+        >
+          <div class="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none">
+            <Clock class="w-64 h-64 text-white" />
+          </div>
+
+          <div class="space-y-4 z-10">
+            <div class="flex items-center justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-inner">
+                <Clock class="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <span class="text-xs font-bold uppercase tracking-wider text-white bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
+                Menunggu Verifikasi
+              </span>
+            </div>
+
+            <div class="space-y-2">
+              <h2 class="text-2xl sm:text-3xl font-extrabold leading-snug tracking-tight">
+                Bukti Piket Dikirim
+              </h2>
+              <p class="text-sky-100 text-xs sm:text-sm font-medium leading-relaxed">
+                Bukti Piket Kelompok Hari Ini Telah Dikirim oleh
+                <span class="font-extrabold text-white underline decoration-sky-300 underline-offset-4">{{ todayStatus.uploader_name || todayStatus.uploader?.name || 'Anggota Kelompok' }}</span>
+              </p>
+            </div>
+          </div>
+
+          <div class="z-10 pt-2">
+            <button
+              disabled
+              class="w-full bg-white/20 backdrop-blur-md text-white py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm border border-white/30 flex items-center justify-center space-x-2 cursor-not-allowed opacity-90"
+            >
+              <CheckCircle2 class="w-4 h-4 text-sky-200" />
+              <span>Sudah Dikirim (Menunggu Admin)</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- b. Status Approved (Disetujui Admin) -->
+        <div
+          v-else-if="todayStatus.has_uploaded && (todayStatus.status_approval === 'approved' || todayStatus.status_approval === 'APPROVED' || todayStatus.status_approval === 'setuju' || todayStatus.status_approval === 'SETUJU')"
+          class="bg-gradient-to-br from-emerald-500 via-[#00B775] to-teal-700 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-emerald-500/25 flex flex-col justify-between text-left space-y-6 relative overflow-hidden group"
+        >
+          <div class="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none">
+            <CheckCircle2 class="w-64 h-64 text-white" />
+          </div>
+
+          <div class="space-y-4 z-10">
+            <div class="flex items-center justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-inner">
+                <CheckCircle2 class="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <span class="text-xs font-bold uppercase tracking-wider text-white bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
+                Piket Selesai
+              </span>
+            </div>
+
+            <div class="space-y-2">
+              <h2 class="text-2xl sm:text-3xl font-extrabold leading-snug tracking-tight">
+                Piket Disetujui
+              </h2>
+              <p class="text-emerald-100 text-xs sm:text-sm font-medium leading-relaxed">
+                Piket Kelompok Hari Ini Selesai & Disetujui Admin. Terima kasih sudah menjaga kebersihan kelas!
+              </p>
+            </div>
+          </div>
+
+          <div class="z-10 pt-2">
+            <button
+              disabled
+              class="w-full bg-white/20 backdrop-blur-md text-white py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm border border-white/30 flex items-center justify-center space-x-2 cursor-not-allowed opacity-90"
+            >
+              <CheckCircle2 class="w-4 h-4 text-emerald-200" />
+              <span>Tugas Piket Tuntas</span>
+            </button>
+          </div>
+        </div>
+
+        <!-- c. Status Rejected (Ditolak Admin) -->
+        <div
+          v-else-if="todayStatus.has_uploaded && (todayStatus.status_approval === 'rejected' || todayStatus.status_approval === 'REJECTED' || todayStatus.status_approval === 'tolak' || todayStatus.status_approval === 'TOLAK')"
+          class="bg-gradient-to-br from-rose-500 via-rose-600 to-red-700 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-rose-500/25 flex flex-col justify-between text-left space-y-6 relative overflow-hidden group"
+        >
+          <div class="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none">
+            <AlertCircle class="w-64 h-64 text-white" />
+          </div>
+
+          <div class="space-y-4 z-10">
+            <div class="flex items-center justify-between">
+              <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-inner">
+                <AlertCircle class="w-6 h-6 stroke-[2.5]" />
+              </div>
+              <span class="text-xs font-bold uppercase tracking-wider text-white bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
+                Perlu Perbaikan
+              </span>
+            </div>
+
+            <div class="space-y-2">
+              <h2 class="text-2xl sm:text-3xl font-extrabold leading-snug tracking-tight">
+                Bukti Piket Ditolak
+              </h2>
+              <div class="bg-white/15 border border-white/20 rounded-2xl p-3.5 backdrop-blur-xs space-y-1">
+                <p class="text-[11px] font-bold uppercase tracking-wider text-rose-100">Catatan Admin:</p>
+                <p class="text-xs sm:text-sm font-semibold text-white italic">
+                  "{{ todayStatus.catatan_admin || todayStatus.catatan || 'Foto kurang jelas atau tugas belum selesai sepenuhnya.' }}"
+                </p>
+              </div>
+            </div>
+          </div>
+
+          <div class="z-10 pt-2">
+            <button
+              @click="handleRedirectToUploadForm"
+              class="w-full bg-slate-900 hover:bg-slate-800 text-white py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm shadow-xl transition-all duration-200 flex items-center justify-between cursor-pointer hover:translate-y-[-1px]"
+            >
+              <div class="flex items-center space-x-2">
+                <Upload class="w-4 h-4 text-rose-400" />
+                <span>Kirim Ulang Bukti Piket</span>
+              </div>
+              <ArrowRight class="w-4 h-4 text-rose-300" />
+            </button>
+          </div>
+        </div>
+
+        <!-- d. Status Belum Upload & Hari Ini Piket Siswa -->
         <div
           v-else-if="isTodayMyDutyDay"
           class="bg-gradient-to-br from-[#00B775] via-emerald-600 to-teal-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-[#00B775]/25 flex flex-col justify-between text-left space-y-6 relative overflow-hidden group"
         >
-          <!-- Watermark Icon Background -->
           <div class="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none">
             <CheckCircle2 class="w-64 h-64 text-white" />
           </div>
@@ -139,7 +266,6 @@
             </div>
           </div>
 
-          <!-- Direct CTA Button redirect ke Form Upload -->
           <div class="z-10 pt-2">
             <button
               @click="handleRedirectToUploadForm"
@@ -154,7 +280,7 @@
           </div>
         </div>
 
-        <!-- Option B: Jika Hari Ini BUKAN Jadwal Piket Siswa (Desain Rata Kiri) -->
+        <!-- e. Jika Hari Ini BUKAN Jadwal Piket Siswa -->
         <div
           v-else
           class="bg-white border-2 border-slate-200 rounded-3xl p-6 sm:p-8 shadow-xs flex flex-col justify-between text-left space-y-6 relative overflow-hidden"
@@ -330,6 +456,13 @@ const showHistoryModal = ref(false)
 
 const todayDutyOfficers = ref([])
 const historyList = ref([])
+const allClassSchedules = ref([])
+const todayStatus = ref({
+  has_uploaded: false,
+  status_approval: null,
+  uploader_name: '',
+  catatan_admin: ''
+})
 
 const toast = ref({
   show: false,
@@ -339,51 +472,70 @@ const toast = ref({
 
 const dayNamesIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
 
-// 1. Dynamic Student Name dari Auth Store (Ilman Abidullah)
+// Get Current Logged-In User ID
+const currentUserId = computed(() => {
+  const user = authStore.user
+  if (user && user.id) return user.id
+  
+  // Fallback ke localStorage jika diset secara terpisah
+  try {
+    const localUser = JSON.parse(localStorage.getItem('user') || '{}')
+    if (localUser && localUser.id) return localUser.id
+  } catch (e) {
+    // Ignore error
+  }
+  return null
+})
+
+// 1. Dynamic Student Name dari Auth Store
 const studentName = computed(() => {
   const user = authStore.user
-  if (user) {
-    if (user.name && user.name !== 'Siswa Piket' && user.name !== 'Siswa') {
-      return user.name
-    }
-    if (user.email) {
-      if (user.email.toLowerCase().includes('ilman')) return 'Ilman Abidullah'
-      if (user.email.toLowerCase().includes('jihad')) return 'Jihad'
-      
-      const prefix = user.email.split('@')[0]
-      return prefix
-        .replace(/[._-]/g, ' ')
-        .split(' ')
-        .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
-        .join(' ')
-    }
+  if (user && user.name) {
+    return user.name
   }
-  return 'Ilman Abidullah'
+  return 'Siswa Piket'
 })
 
 const isCurrentStudent = (officer) => {
-  const name = typeof officer === 'string' ? officer : officer.name || officer.nama_siswa
-  if (!name) return false
-  return name.toLowerCase().includes(studentName.value.toLowerCase())
-}
-
-// 3. Logika: Jadwal piket siswa (Mencari hari-hari di mana siswa ini dijadwalkan)
-const scheduleMapData = {
-  Senin: [{ name: 'Jihad' }, { name: 'Ilman Abidullah' }],
-  Selasa: [{ name: 'Riki' }, { name: 'Candra' }],
-  Rabu: [{ name: 'Ilman Abidullah' }, { name: 'Riki' }],
-  Kamis: [{ name: 'Jihad' }, { name: 'Candra' }],
-  Jumat: [{ name: 'Ilman Abidullah' }, { name: 'Riki' }],
-}
-
-const myDutyDaysFormatted = computed(() => {
-  const currentName = studentName.value.toLowerCase()
-  const days = []
-  for (const [day, officers] of Object.entries(scheduleMapData)) {
-    if (officers.some((o) => o.name.toLowerCase().includes(currentName))) {
-      days.push(day)
-    }
+  if (!officer) return false
+  
+  // Cek pencocokan ID jika ID tersedia
+  const officerId = officer.user_id || officer.siswa_id || officer.user?.id || officer.siswa?.id || officer.id
+  if (currentUserId.value && officerId) {
+    return Number(currentUserId.value) === Number(officerId)
   }
+  
+  // Fallback ke pencocokan nama / email
+  const name = typeof officer === 'string'
+    ? officer
+    : officer.user?.name || officer.siswa?.name || officer.name || officer.nama_siswa || ''
+  if (name && studentName.value) {
+    return name.toLowerCase().includes(studentName.value.toLowerCase())
+  }
+  return false
+}
+
+// Format hari piket siswa (diambil dari data real API allClassSchedules)
+const myDutyDaysFormatted = computed(() => {
+  const days = []
+  const uid = currentUserId.value
+  const sName = studentName.value?.toLowerCase()
+
+  allClassSchedules.value.forEach((item) => {
+    const itemDay = item.hari_piket || item.hari
+    if (!itemDay) return
+
+    const officerId = item.user_id || item.siswa_id || item.user?.id || item.siswa?.id || item.id
+    const officerName = (item.user?.name || item.siswa?.name || item.name || item.nama_siswa || '').toLowerCase()
+
+    const isMatch = (uid && officerId && Number(uid) === Number(officerId)) ||
+      (sName && officerName && officerName.includes(sName))
+
+    if (isMatch && !days.includes(itemDay)) {
+      days.push(itemDay)
+    }
+  })
+
   if (days.length === 0) return 'Belum ditentukan'
   if (days.length === 1) return days[0]
   if (days.length === 2) return `${days[0]} & ${days[1]}`
@@ -407,41 +559,81 @@ const updateDate = () => {
   formattedDateOnly.value = `${dd}-${mm}-${yyyy}`
 }
 
-// 2. Load Data Jadwal Harian
+// 2. Fetch Real Data Jadwal Piket Harian & Status Bukti Piket Hari Ini dari Backend Laravel
 const fetchDashboardData = async () => {
   loadingSchedule.value = true
   try {
-    const res = await api.get('/siswa/dashboard')
-    const data = res.data?.data || res.data
+    // 1) Ambil status bukti piket kelompok hari ini dari GET /api/siswa/bukti-piket/today
+    try {
+      const resStatus = await api.get('/siswa/bukti-piket/today')
+      const payload = resStatus.data
+      const buktiRecord = payload?.data || null
+      const hasUploaded = payload?.has_uploaded ?? (buktiRecord ? true : false)
 
-    if (data && data.today_officers && Array.isArray(data.today_officers)) {
-      todayDutyOfficers.value = data.today_officers
-    } else if (data && data.jadwal && Array.isArray(data.jadwal)) {
-      todayDutyOfficers.value = data.jadwal
-    } else {
-      loadFallbackOfficers()
+      todayStatus.value = {
+        has_uploaded: hasUploaded,
+        status_approval: buktiRecord?.status_approval || buktiRecord?.status || null,
+        uploader_name: buktiRecord?.user?.name || buktiRecord?.uploader_name || '',
+        catatan_admin: buktiRecord?.catatan_admin || buktiRecord?.catatan || ''
+      }
+    } catch (errStatus) {
+      console.warn('Gagal memuat status bukti piket hari ini:', errStatus)
     }
 
-    if (data && data.history && Array.isArray(data.history)) {
-      historyList.value = data.history
+    // 2) Ambil jadwal kelas real dari GET /api/siswa/jadwal-piket/kelas
+    let classSchedules = []
+    try {
+      const resJadwal = await api.get('/siswa/jadwal-piket/kelas')
+      classSchedules = Array.isArray(resJadwal.data)
+        ? resJadwal.data
+        : (resJadwal.data?.data || [])
+    } catch (errJadwal) {
+      try {
+        const resJadwalAlt = await api.get('/siswa/jadwal-piket')
+        classSchedules = Array.isArray(resJadwalAlt.data)
+          ? resJadwalAlt.data
+          : (resJadwalAlt.data?.data || [])
+      } catch (errAlt) {
+        console.warn('Gagal memuat jadwal piket kelas dari API:', errAlt)
+      }
+    }
+
+    allClassSchedules.value = classSchedules
+
+    // 3) Filter petugas piket hari ini berdasarkan nama hari saat ini
+    const today = currentDayName.value
+    if (today && classSchedules.length > 0) {
+      todayDutyOfficers.value = classSchedules.filter((j) => {
+        const itemHari = j.hari_piket || j.hari
+        return itemHari === today
+      })
     } else {
+      todayDutyOfficers.value = []
+    }
+
+    // 4) Ambil histori bukti piket milik siswa dari GET /api/siswa/bukti-piket
+    try {
+      const resHistory = await api.get('/siswa/bukti-piket')
+      const historyData = resHistory.data?.data || resHistory.data
+      if (Array.isArray(historyData) && historyData.length > 0) {
+        historyList.value = historyData.map((item) => ({
+          tanggal: item.tanggal,
+          tugas: item.tasks?.map((t) => t.nama_tugas).join(', ') || item.deskripsi || 'Piket Kelas',
+          status: (item.status_approval || 'PENDING').toUpperCase()
+        }))
+      } else {
+        loadFallbackHistory()
+      }
+    } catch (errHist) {
       loadFallbackHistory()
     }
   } catch (err) {
-    console.warn('API /siswa/dashboard call failed, loading fallback schedule:', err)
-    loadFallbackOfficers()
+    console.error('API Error fetchDashboardData:', err)
+    todayDutyOfficers.value = []
     loadFallbackHistory()
   } finally {
     loadingSchedule.value = false
   }
-}
-
-const loadFallbackOfficers = () => {
-  const day = currentDayName.value || 'Kamis'
-  todayDutyOfficers.value = scheduleMapData[day] || [
-    { id: 1, name: 'Jihad' },
-    { id: 2, name: 'Candra' }
-  ]
 }
 
 const loadFallbackHistory = () => {
@@ -466,7 +658,6 @@ const handleRedirectToUploadForm = () => {
 
 onMounted(() => {
   updateDate()
-  loadFallbackOfficers() // Pre-fill synchronously on mount to eliminate loading flash!
   fetchDashboardData()
 })
 </script>

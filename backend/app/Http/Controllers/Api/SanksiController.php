@@ -43,14 +43,13 @@ class SanksiController extends Controller
     {
         $sanksi = Sanksi::findOrFail($id);
 
-        // Cek apakah master sanksi ini sedang aktif digunakan oleh siswa/kelompok yang statusnya 'belum'
         $sedangDigunakan = SanksiSiswa::where('sanksi_id', $id)
             ->where('status_penyelesaian', 'belum')
             ->exists();
 
         if ($sedangDigunakan) {
             return response()->json([
-                'message' => 'Master sanksi tidak dapat diubah karena sedang diberikan kepada siswa/kelompok yang belum menyelesaikan sanksi tersebut. Harap selesaikan sanksi pada siswa/kelompok terlebih dahulu!'
+                'message' => 'Master sanksi tidak dapat diubah karena sedang diberikan kepada siswa/kelompok yang belum menyelesaikan sanksi tersebut.'
             ], 422);
         }
 
@@ -72,14 +71,13 @@ class SanksiController extends Controller
     {
         $sanksi = Sanksi::findOrFail($id);
 
-        // Cek apakah master sanksi ini sedang aktif digunakan oleh siswa/kelompok yang statusnya 'belum'
         $sedangDigunakan = SanksiSiswa::where('sanksi_id', $id)
             ->where('status_penyelesaian', 'belum')
             ->exists();
 
         if ($sedangDigunakan) {
             return response()->json([
-                'message' => 'Master sanksi tidak dapat dihapus karena sedang diberikan kepada siswa/kelompok yang belum menyelesaikan sanksi tersebut. Harap selesaikan sanksi pada siswa/kelompok terlebih dahulu!'
+                'message' => 'Master sanksi tidak dapat dihapus karena sedang diberikan kepada siswa/kelompok yang belum menyelesaikan sanksi tersebut.'
             ], 422);
         }
 
@@ -104,10 +102,13 @@ class SanksiController extends Controller
         ]);
     }
 
-    // Ambil sanksi milik siswa yang sedang login
+    /**
+     * REKOMENDASI PERBAIKAN 1: Eager Loading Lengkap untuk Endpoint Siswa
+     * Ambil sanksi milik siswa yang sedang login beserta relasi sanksi & user
+     */
     public function meSiswa(Request $request)
     {
-        $sanksi = SanksiSiswa::with('sanksi')
+        $sanksi = SanksiSiswa::with(['sanksi', 'user:id,name,email'])
             ->where('user_id', $request->user()->id)
             ->latest()
             ->get();
@@ -128,7 +129,6 @@ class SanksiController extends Controller
             'alasan'      => 'required|string',
         ]);
 
-        // Scenario A: Sanksi Individu
         if ($request->tipe_sanksi === 'individu') {
             if (!$request->user_id) {
                 return response()->json(['message' => 'User ID wajib diisi untuk sanksi individu.'], 422);
@@ -142,7 +142,6 @@ class SanksiController extends Controller
                 'status_penyelesaian' => 'belum',
             ]);
 
-            // Kirim inbox ke siswa tersebut
             $user = User::find($request->user_id);
             if ($user) {
                 $user->notify(new SanksiNotification($sanksiSiswa));
@@ -154,7 +153,6 @@ class SanksiController extends Controller
             ], 201);
         }
 
-        // Scenario B: Sanksi Kelompok (Semua siswa yang piket di hari tersebut)
         if ($request->tipe_sanksi === 'kelompok' && $request->hari) {
             $siswaPiket = JadwalPiket::where('hari', $request->hari)->get();
 
@@ -171,7 +169,6 @@ class SanksiController extends Controller
                     'status_penyelesaian' => 'belum',
                 ]);
 
-                // Kirim inbox ke masing-masing anggota kelompok
                 $user = User::find($piket->user_id);
                 if ($user) {
                     $user->notify(new SanksiNotification($sanksiSiswa));
@@ -216,7 +213,9 @@ class SanksiController extends Controller
         ]);
     }
 
-    // Admin / Siswa meng-update status sanksi (misal: dari 'belum' ke 'selesai')
+    /**
+     * REKOMENDASI PERBAIKAN 2: Kirim Notifikasi Pembaharuan Status ke Siswa saat Status Diubah
+     */
     public function updateStatusSiswa(Request $request, $id)
     {
         $request->validate([
@@ -228,9 +227,17 @@ class SanksiController extends Controller
             'status_penyelesaian' => $request->status_penyelesaian,
         ]);
 
+        // Opsional: Kirim ualng notifikasi status ke inbox siswa jika status diselesaikan
+        if ($request->status_penyelesaian === 'selesai') {
+            $user = User::find($sanksiSiswa->user_id);
+            if ($user) {
+                $user->notify(new SanksiNotification($sanksiSiswa));
+            }
+        }
+
         return response()->json([
             'message' => 'Status penyelesaian sanksi berhasil diperbarui',
-            'data'    => $sanksiSiswa
+            'data'    => $sanksiSiswa->load(['user:id,name', 'sanksi'])
         ]);
     }
 }

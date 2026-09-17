@@ -285,23 +285,77 @@
           </div>
 
           <form @submit.prevent="submitForm" class="space-y-4">
-            <!-- Pilih Siswa -->
-            <div class="space-y-1.5">
+            <!-- Pilih Siswa (Mode Multi-select untuk Tambah, Single untuk Edit) -->
+            <div v-if="!isEditing" class="space-y-2">
+              <div class="flex items-center justify-between">
+                <label class="block text-slate-800 font-bold text-sm">
+                  Pilih Siswa <span class="text-rose-500">*</span>
+                  <span v-if="form.user_ids.length > 0" class="ml-2 text-xs text-[#00B775] font-extrabold">
+                    ({{ form.user_ids.length }} dipilih)
+                  </span>
+                </label>
+                <button
+                  type="button"
+                  @click="toggleSelectAllSiswa"
+                  class="text-xs font-bold text-[#00B775] hover:underline cursor-pointer"
+                >
+                  {{ isAllSiswaSelected ? 'Batal Semua' : 'Pilih Semua' }}
+                </button>
+              </div>
+
+              <!-- Search Siswa di Modal -->
+              <div class="relative">
+                <Search class="w-3.5 h-3.5 absolute left-3 top-1/2 -translate-y-1/2 text-slate-400" />
+                <input
+                  v-model="modalSiswaSearch"
+                  type="text"
+                  placeholder="Cari nama siswa..."
+                  class="w-full pl-9 pr-3 py-1.5 bg-slate-50 border border-slate-200 rounded-xl text-xs focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all"
+                />
+              </div>
+
+              <!-- List Checkbox Siswa -->
+              <div class="max-h-48 overflow-y-auto border border-slate-200 rounded-2xl p-2 space-y-1 bg-slate-50/50">
+                <label
+                  v-for="s in filteredModalSiswa"
+                  :key="s.id"
+                  :class="[
+                    'flex items-center space-x-2.5 p-2 rounded-xl border transition-all cursor-pointer text-xs font-semibold',
+                    form.user_ids.includes(s.id)
+                      ? 'bg-emerald-50 border-[#00B775] text-[#00B775] font-bold'
+                      : 'bg-white border-slate-200 text-slate-700 hover:border-emerald-300'
+                  ]"
+                >
+                  <input
+                    type="checkbox"
+                    :value="s.id"
+                    v-model="form.user_ids"
+                    class="w-4 h-4 rounded text-[#00B775] focus:ring-[#00B775] accent-[#00B775]"
+                  />
+                  <span class="truncate">{{ s.name || s.nama }} {{ s.no_absen ? `(No. ${s.no_absen})` : '' }}</span>
+                </label>
+                <div v-if="filteredModalSiswa.length === 0" class="text-center py-4 text-slate-400 text-xs font-medium">
+                  Siswa tidak ditemukan.
+                </div>
+              </div>
+            </div>
+
+            <!-- Single Select (Mode Edit) -->
+            <div v-else class="space-y-1.5">
               <label class="block text-slate-800 font-bold text-sm">
                 Siswa <span class="text-rose-500">*</span>
               </label>
               <select
                 v-model="form.user_id"
                 required
-                :disabled="isEditing"
-                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all shadow-xs cursor-pointer disabled:bg-slate-50 disabled:text-slate-500"
+                disabled
+                class="w-full px-4 py-2.5 bg-slate-50 border border-slate-200 rounded-xl text-sm font-semibold text-slate-500 cursor-not-allowed"
               >
-                <option value="" disabled>-- Pilih Siswa --</option>
                 <option v-for="s in daftarSiswa" :key="s.id" :value="s.id">
                   {{ s.name || s.nama }} {{ s.no_absen ? `(No. ${s.no_absen})` : '' }}
                 </option>
               </select>
-              <p v-if="isEditing" class="text-[10px] text-slate-400">* Siswa tidak bisa diubah. Hapus lalu buat jadwal baru jika perlu.</p>
+              <p class="text-[10px] text-slate-400">* Siswa tidak bisa diubah saat Mode Edit.</p>
             </div>
 
             <!-- Hari Piket -->
@@ -318,8 +372,8 @@
                   :class="[
                     'py-2 rounded-xl border-2 text-xs font-bold transition-all cursor-pointer',
                     form.hari_piket === hari
-                      ? 'border-indigo-500 bg-indigo-50 text-indigo-700'
-                      : 'border-slate-200 text-slate-500 hover:border-indigo-300 hover:bg-indigo-50/40'
+                      ? 'border-[#00B775] bg-emerald-50 text-[#00B775]'
+                      : 'border-slate-200 text-slate-500 hover:border-emerald-300 hover:bg-emerald-50/40'
                   ]"
                 >{{ hari.slice(0, 3) }}</button>
               </div>
@@ -333,7 +387,7 @@
                 v-model="form.catatan"
                 rows="2"
                 placeholder="Catatan tambahan untuk jadwal ini..."
-                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-indigo-400 focus:border-transparent transition-all shadow-xs resize-none"
+                class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs resize-none"
               ></textarea>
             </div>
 
@@ -344,14 +398,14 @@
               </button>
               <button
                 type="submit"
-                :disabled="submitting || !form.hari_piket"
-                class="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-indigo-600/20 transition disabled:opacity-60 cursor-pointer flex items-center space-x-2"
+                :disabled="submitting || !form.hari_piket || (!isEditing && form.user_ids.length === 0) || (isEditing && !form.user_id)"
+                class="bg-[#00B775] hover:bg-[#009d64] text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-[#00B775]/20 transition disabled:opacity-60 cursor-pointer flex items-center space-x-2"
               >
                 <svg v-if="submitting" class="animate-spin h-4 w-4 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
                   <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
                   <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
                 </svg>
-                <span>{{ submitting ? 'Menyimpan...' : (isEditing ? 'Update Jadwal' : 'Simpan Jadwal') }}</span>
+                <span>{{ submitting ? 'Menyimpan...' : (isEditing ? 'Update Jadwal' : `Simpan ${form.user_ids.length > 1 ? `(${form.user_ids.length} Siswa)` : 'Jadwal'}`) }}</span>
               </button>
             </div>
           </form>
@@ -433,13 +487,33 @@ const isEditing = ref(false)
 const editingId = ref(null)
 const itemToDelete = ref(null)
 
-const form = ref({ user_id: '', hari_piket: '', catatan: '' })
+const modalSiswaSearch = ref('')
+const form = ref({ user_id: '', user_ids: [], hari_piket: '', catatan: '' })
 const toast = ref({ show: false, message: '', type: 'success' })
 let toastTimer = null
 
 // ========================
-// HELPERS
+// HELPERS & MULTI-SELECT COMPUTED
 // ========================
+const filteredModalSiswa = computed(() => {
+  if (!modalSiswaSearch.value.trim()) return daftarSiswa.value
+  const q = modalSiswaSearch.value.toLowerCase()
+  return daftarSiswa.value.filter(s => (s.name || s.nama || '').toLowerCase().includes(q))
+})
+
+const isAllSiswaSelected = computed(() => {
+  if (daftarSiswa.value.length === 0) return false
+  return form.value.user_ids.length === daftarSiswa.value.length
+})
+
+const toggleSelectAllSiswa = () => {
+  if (isAllSiswaSelected.value) {
+    form.value.user_ids = []
+  } else {
+    form.value.user_ids = daftarSiswa.value.map(s => s.id)
+  }
+}
+
 const showToast = (message, type = 'success') => {
   toast.value = { show: true, message, type }
   if (toastTimer) clearTimeout(toastTimer)
@@ -537,15 +611,19 @@ const fetchDaftarSiswa = async () => {
 const openAddModal = () => {
   isEditing.value = false
   editingId.value = null
-  form.value = { user_id: '', hari_piket: activeHariFilter.value || '', catatan: '' }
+  modalSiswaSearch.value = ''
+  form.value = { user_id: '', user_ids: [], hari_piket: activeHariFilter.value || '', catatan: '' }
   showFormModal.value = true
 }
 
 const openEditModal = (item) => {
   isEditing.value = true
   editingId.value = item.id
+  modalSiswaSearch.value = ''
+  const uId = item.user_id ?? item.siswa?.id ?? item.user?.id ?? ''
   form.value = {
-    user_id: item.user_id ?? item.siswa?.id ?? item.user?.id ?? '',
+    user_id: uId,
+    user_ids: uId ? [uId] : [],
     hari_piket: item.hari_piket ?? item.hari ?? '',
     catatan: item.catatan ?? '',
   }
@@ -571,20 +649,54 @@ const submitForm = async () => {
   if (!form.value.hari_piket) return
   submitting.value = true
 
-  const payload = {
-    user_id: form.value.user_id,
-    hari: form.value.hari_piket,
-    hari_piket: form.value.hari_piket,
-    ...(form.value.catatan ? { catatan: form.value.catatan } : {}),
-  }
-
   try {
     if (isEditing.value) {
+      const payload = {
+        user_id: form.value.user_id,
+        hari: form.value.hari_piket,
+        hari_piket: form.value.hari_piket,
+        ...(form.value.catatan ? { catatan: form.value.catatan } : {}),
+      }
       await api.put(`/admin/jadwal-piket/${editingId.value}`, payload)
       showToast('Jadwal piket berhasil diperbarui!', 'success')
     } else {
-      await api.post('/admin/jadwal-piket', payload)
-      showToast('Jadwal piket berhasil ditambahkan!', 'success')
+      const targetUserIds = form.value.user_ids.length > 0
+        ? form.value.user_ids
+        : (form.value.user_id ? [form.value.user_id] : [])
+
+      if (targetUserIds.length === 0) {
+        showToast('Pilih setidaknya satu siswa.', 'error')
+        submitting.value = false
+        return
+      }
+
+      let successCount = 0
+      let failMessages = []
+
+      for (const uid of targetUserIds) {
+        try {
+          const payload = {
+            user_id: uid,
+            hari: form.value.hari_piket,
+            hari_piket: form.value.hari_piket,
+            ...(form.value.catatan ? { catatan: form.value.catatan } : {}),
+          }
+          await api.post('/admin/jadwal-piket', payload)
+          successCount++
+        } catch (err) {
+          const sObj = daftarSiswa.value.find(s => Number(s.id) === Number(uid))
+          const sName = sObj ? (sObj.name || sObj.nama) : `Siswa ID ${uid}`
+          failMessages.push(`${sName}: ${extractErrorMessage(err)}`)
+        }
+      }
+
+      if (successCount > 0 && failMessages.length === 0) {
+        showToast(`${successCount} jadwal piket berhasil ditambahkan!`, 'success')
+      } else if (successCount > 0 && failMessages.length > 0) {
+        showToast(`${successCount} jadwal berhasil ditambahkan. (${failMessages.join(' | ')})`, 'success')
+      } else {
+        showToast(failMessages.join(' | ') || 'Gagal menambahkan jadwal piket.', 'error')
+      }
     }
     closeFormModal()
     await fetchJadwal()

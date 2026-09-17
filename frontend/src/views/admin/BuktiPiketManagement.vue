@@ -129,21 +129,44 @@
                     {{ (currentPage - 1) * itemsPerPage + index + 1 }}
                   </td>
                   <td class="px-5 py-4">
-                    <p class="font-bold text-slate-900 text-sm">{{ item.siswa?.name || 'Siswa' }}</p>
-                    <p v-if="item.catatan_siswa" class="text-[10px] text-slate-500 italic truncate max-w-[150px]">"{{ item.catatan_siswa }}"</p>
+                    <p class="font-bold text-slate-900 text-sm">{{ item.user?.name || item.siswa?.name || 'Siswa' }}</p>
+                    <p v-if="item.catatan_siswa || item.deskripsi" class="text-[10px] text-slate-500 italic truncate max-w-[150px]">"{{ item.catatan_siswa || item.deskripsi }}"</p>
                   </td>
                   <td class="px-5 py-4">
-                    <p class="font-semibold text-slate-700">{{ formatDate(item.created_at) }}</p>
+                    <p class="font-semibold text-slate-700">{{ formatDate(item.tanggal || item.created_at) }}</p>
                     <p class="text-[10px] text-slate-400">{{ formatTime(item.created_at) }}</p>
                   </td>
                   <td class="px-5 py-4">
                     <div class="flex items-center space-x-2">
-                      <a v-if="item.foto_1" :href="getImageUrl(item.foto_1)" target="_blank" class="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition block bg-slate-100">
+                      <div
+                        v-if="item.foto_1"
+                        @click="openImageModal(getImageUrl(item.foto_1))"
+                        class="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 hover:border-[#00B775] hover:opacity-90 transition block bg-slate-100 cursor-pointer relative group shrink-0"
+                        title="Klik untuk Zoom"
+                      >
                         <img :src="getImageUrl(item.foto_1)" class="w-full h-full object-cover" />
-                      </a>
-                      <a v-if="item.foto_2" :href="getImageUrl(item.foto_2)" target="_blank" class="w-10 h-10 rounded-lg overflow-hidden border border-slate-200 hover:opacity-80 transition block bg-slate-100">
+                        <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                          <ZoomIn class="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                      <div v-else class="w-10 h-10 rounded-xl border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-400 text-xs font-bold select-none shrink-0">
+                        -
+                      </div>
+
+                      <div
+                        v-if="item.foto_2"
+                        @click="openImageModal(getImageUrl(item.foto_2))"
+                        class="w-10 h-10 rounded-xl overflow-hidden border border-slate-200 hover:border-[#00B775] hover:opacity-90 transition block bg-slate-100 cursor-pointer relative group shrink-0"
+                        title="Klik untuk Zoom"
+                      >
                         <img :src="getImageUrl(item.foto_2)" class="w-full h-full object-cover" />
-                      </a>
+                        <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                          <ZoomIn class="w-3.5 h-3.5" />
+                        </div>
+                      </div>
+                      <div v-else class="w-10 h-10 rounded-xl border border-dashed border-slate-300 bg-slate-50 flex items-center justify-center text-slate-400 text-xs font-bold select-none shrink-0">
+                        -
+                      </div>
                     </div>
                   </td>
                   <td class="px-5 py-4 text-center">
@@ -249,6 +272,74 @@
       </div>
     </transition>
 
+    <!-- ===== Teleport Image Preview Modal (Zoom In / Out) ===== -->
+    <teleport to="body">
+      <transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div
+          v-if="previewModal.show"
+          class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-4 font-sans select-none"
+          @click.self="closeImageModal"
+        >
+          <!-- Floating Toolbar Controls -->
+          <div class="fixed top-6 bg-slate-900/90 border border-slate-700/80 rounded-2xl px-4 py-2 flex items-center space-x-3 text-white shadow-2xl backdrop-blur-lg z-[110]">
+            <button
+              type="button"
+              @click="zoomOut"
+              class="p-2 hover:bg-slate-800 rounded-xl transition cursor-pointer text-slate-300 hover:text-white"
+              title="Zoom Out (-)"
+            >
+              <ZoomOut class="w-5 h-5" />
+            </button>
+            <span class="text-xs font-mono font-bold w-12 text-center text-sky-400">
+              {{ Math.round(previewModal.zoom * 100) }}%
+            </span>
+            <button
+              type="button"
+              @click="zoomIn"
+              class="p-2 hover:bg-slate-800 rounded-xl transition cursor-pointer text-slate-300 hover:text-white"
+              title="Zoom In (+)"
+            >
+              <ZoomIn class="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              @click="resetZoom"
+              class="p-2 hover:bg-slate-800 rounded-xl transition cursor-pointer text-slate-300 hover:text-white text-xs font-semibold px-2.5"
+              title="Reset Zoom"
+            >
+              Reset
+            </button>
+            <div class="w-px h-5 bg-slate-700"></div>
+            <button
+              type="button"
+              @click="closeImageModal"
+              class="p-2 bg-rose-600/80 hover:bg-rose-600 rounded-xl transition cursor-pointer text-white"
+              title="Tutup Modal"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- Image Display Area -->
+          <div class="w-full h-full flex items-center justify-center overflow-auto p-8 max-w-5xl max-h-[85vh]">
+            <img
+              :src="previewModal.url"
+              alt="Bukti Piket Large Preview"
+              class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-transform duration-200 ease-out"
+              :style="{ transform: `scale(${previewModal.zoom})` }"
+            />
+          </div>
+        </div>
+      </transition>
+    </teleport>
+
   </div>
 </template>
 
@@ -259,8 +350,40 @@ import AdminNavbar from '@/components/AdminNavbar.vue'
 import {
   Camera, Search, Check, X,
   Home, ChevronRight, ChevronLeft,
-  CheckCircle2, AlertCircle
+  CheckCircle2, AlertCircle, ZoomIn, ZoomOut
 } from 'lucide-vue-next'
+
+// ===== Image Zoom Preview Modal State & Handlers =====
+const previewModal = ref({
+  show: false,
+  url: '',
+  zoom: 1
+})
+
+const openImageModal = (url) => {
+  if (!url) return
+  previewModal.value = { show: true, url, zoom: 1 }
+}
+
+const closeImageModal = () => {
+  previewModal.value.show = false
+}
+
+const zoomIn = () => {
+  if (previewModal.value.zoom < 3) {
+    previewModal.value.zoom = Number((previewModal.value.zoom + 0.25).toFixed(2))
+  }
+}
+
+const zoomOut = () => {
+  if (previewModal.value.zoom > 0.5) {
+    previewModal.value.zoom = Number((previewModal.value.zoom - 0.25).toFixed(2))
+  }
+}
+
+const resetZoom = () => {
+  previewModal.value.zoom = 1
+}
 
 // ========================
 // STATE
@@ -296,8 +419,9 @@ const getImageUrl = (path) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return '-'
-  const date = new Date(dateString)
-  return new Intl.DateTimeFormat('id-ID', { day: '2-digit', month: 'short', year: 'numeric' }).format(date)
+  const date = typeof dateString === 'string' && dateString.length === 10 ? new Date(`${dateString}T00:00:00`) : new Date(dateString)
+  if (isNaN(date.getTime())) return dateString
+  return new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(date)
 }
 
 const formatTime = (dateString) => {
@@ -316,7 +440,7 @@ const filteredBukti = computed(() => {
   }
   if (searchQuery.value.trim()) {
     const q = searchQuery.value.toLowerCase()
-    list = list.filter(b => (b.siswa?.name || '').toLowerCase().includes(q))
+    list = list.filter(b => ((b.user?.name || b.siswa?.name || '').toLowerCase().includes(q)))
   }
   return list
 })

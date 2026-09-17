@@ -11,11 +11,17 @@
     <div class="relative" ref="dropdownRef">
       <button
         @click="isMenuOpen = !isMenuOpen"
-        class="bg-[#00B775] hover:bg-[#009d64] text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center space-x-2.5 shadow-md shadow-[#00B775]/20 transition-all duration-200 cursor-pointer"
+        class="relative bg-[#00B775] hover:bg-[#009d64] text-white px-4 py-2 rounded-xl font-bold text-sm flex items-center space-x-2.5 shadow-md shadow-[#00B775]/20 transition-all duration-200 cursor-pointer"
       >
         <span class="tracking-wide font-extrabold text-xs sm:text-sm">MENU</span>
         <Menu v-if="!isMenuOpen" class="w-4 h-4 stroke-[2.5]" />
         <X v-else class="w-4 h-4 stroke-[2.5]" />
+        
+        <!-- Red Dot Unread Badge -->
+        <span v-if="unreadCount > 0" class="absolute -top-1.5 -right-1.5 flex h-3.5 w-3.5">
+          <span class="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75"></span>
+          <span class="relative inline-flex rounded-full h-3.5 w-3.5 bg-rose-500 border-2 border-white"></span>
+        </span>
       </button>
 
       <!-- Menu Dropdown Overlay Panel -->
@@ -31,23 +37,27 @@
           v-if="isMenuOpen"
           class="absolute right-0 mt-2 w-48 bg-[#00B775] text-white rounded-2xl shadow-2xl py-2 z-50 border border-emerald-400/40 text-left overflow-hidden"
         >
-          <a
-            href="#"
-            @click.prevent="openInbox"
-            class="flex items-center space-x-2.5 px-4 py-2.5 text-xs font-semibold hover:bg-[#009d64] transition"
+          <router-link
+            to="/siswa/inbox"
+            @click="isMenuOpen = false"
+            class="flex items-center space-x-2.5 px-4 py-2.5 text-xs font-semibold hover:bg-[#009d64] transition relative"
           >
             <Inbox class="w-4 h-4" />
-            <span>Inbox</span>
-          </a>
+            <span class="flex-1">Inbox</span>
+            <span v-if="unreadCount > 0" class="bg-rose-500 text-white text-[10px] font-extrabold px-2 py-0.5 rounded-full shadow-xs">
+              {{ unreadCount > 99 ? '99+' : unreadCount }}
+            </span>
+          </router-link>
 
-          <a
-            href="#"
-            @click.prevent="openHistory"
+          <!-- Navigate directly to /siswa/history instead of emitting -->
+          <router-link
+            to="/siswa/history"
+            @click="isMenuOpen = false"
             class="flex items-center space-x-2.5 px-4 py-2.5 text-xs font-semibold hover:bg-[#009d64] transition"
           >
             <History class="w-4 h-4" />
             <span>Histori</span>
-          </a>
+          </router-link>
 
           <div class="my-1 border-t border-emerald-400/30"></div>
 
@@ -62,7 +72,7 @@
       </transition>
     </div>
 
-    <!-- Teleport Modal ke <body> agar Backdrop Blur Menutupi Seluruh Layar (100% Sama Rata) -->
+    <!-- Teleport Modal ke <body> agar Backdrop Blur Menutupi Seluruh Layar -->
     <teleport to="body">
       <div
         v-if="showLogoutModal"
@@ -110,23 +120,27 @@ import { ref, onMounted, onUnmounted } from 'vue'
 import { useRouter } from 'vue-router'
 import { useAuthStore } from '@/stores/auth'
 import { Menu, X, Inbox, History, LogOut } from 'lucide-vue-next'
+import api from '@/utils/api'
 
 const router = useRouter()
 const authStore = useAuthStore()
 const isMenuOpen = ref(false)
 const showLogoutModal = ref(false)
 const dropdownRef = ref(null)
+const unreadCount = ref(0)
 
-const emit = defineEmits(['open-inbox', 'open-history'])
-
-const openInbox = () => {
-  isMenuOpen.value = false
-  emit('open-inbox')
-}
-
-const openHistory = () => {
-  isMenuOpen.value = false
-  emit('open-history')
+const fetchUnreadCount = async () => {
+  try {
+    const res = await api.get('/siswa/notifications')
+    if (res.data && typeof res.data.unread_count === 'number') {
+      unreadCount.value = res.data.unread_count
+    } else {
+      const notifs = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+      unreadCount.value = notifs.filter(n => n.read_at === null || (!n.read_at && !n.is_read)).length
+    }
+  } catch (err) {
+    console.error('Failed to fetch unread notifications', err)
+  }
 }
 
 const promptLogout = () => {
@@ -148,9 +162,12 @@ const handleClickOutside = (event) => {
 
 onMounted(() => {
   document.addEventListener('click', handleClickOutside)
+  window.addEventListener('notifications-updated', fetchUnreadCount)
+  fetchUnreadCount()
 })
 
 onUnmounted(() => {
   document.removeEventListener('click', handleClickOutside)
+  window.removeEventListener('notifications-updated', fetchUnreadCount)
 })
 </script>

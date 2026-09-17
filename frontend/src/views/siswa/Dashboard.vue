@@ -38,7 +38,7 @@
     </transition>
 
     <!-- Siswa Navbar Component with Dropdown Menu -->
-    <SiswaNavbar @open-inbox="showInboxModal = true" @open-history="showHistoryModal = true" />
+    <SiswaNavbar />
 
     <!-- Main Content Container -->
     <main class="max-w-5xl mx-auto px-4 md:px-8 py-6 w-full space-y-5 flex-1">
@@ -55,6 +55,27 @@
         <p class="text-slate-600 text-sm sm:text-base font-normal">
           Berikut adalah gambaran umum jadwal piket Anda.
         </p>
+      </div>
+
+      <!-- Off-Duty Info Banner (Tampil KHUSUS jika Piket Disetujui & Siswa sedang Off-Duty) -->
+      <div
+        v-if="showOffDutyBannerOnApproved"
+        class="bg-emerald-50/90 border-2 border-emerald-300 rounded-3xl p-4 sm:p-5 flex items-center justify-between text-left shadow-xs animate-in fade-in duration-200"
+      >
+        <div class="flex items-center space-x-3.5">
+          <div class="w-10 h-10 rounded-2xl bg-[#00B775] text-white flex items-center justify-center shrink-0 shadow-xs">
+            <CalendarCheck class="w-5 h-5" />
+          </div>
+          <div>
+            <div class="flex items-center space-x-2">
+              <span class="text-xs font-extrabold uppercase tracking-wider text-emerald-800">Status Piket Anda:</span>
+              <span class="text-[10px] font-extrabold uppercase bg-emerald-200 text-emerald-800 px-2.5 py-0.5 rounded-full border border-emerald-300">Off-Duty</span>
+            </div>
+            <p class="text-xs sm:text-sm font-semibold text-slate-700 mt-0.5">
+              Hari ini Anda libur piket (Piket Kelas Selesai). Jadwal piket Anda: <span class="font-extrabold text-[#00B775]">{{ myDutyDaysFormatted }}</span>.
+            </p>
+          </div>
+        </div>
       </div>
 
       <!-- 3. Grid Row: Schedule Card & Upload Proof Action Card -->
@@ -116,13 +137,13 @@
           class="bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-sky-500/25 flex flex-col justify-between text-left space-y-6 relative overflow-hidden group"
         >
           <div class="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none">
-            <Clock class="w-64 h-64 text-white" />
+            <Hourglass class="w-64 h-64 text-white" />
           </div>
 
           <div class="space-y-4 z-10">
             <div class="flex items-center justify-between">
               <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-inner">
-                <Clock class="w-6 h-6 stroke-[2.5]" />
+                <Hourglass class="w-6 h-6 stroke-[2.5]" />
               </div>
               <span class="text-xs font-bold uppercase tracking-wider text-white bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
                 Menunggu Verifikasi
@@ -145,7 +166,7 @@
               disabled
               class="w-full bg-white/20 backdrop-blur-md text-white py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm border border-white/30 flex items-center justify-center space-x-2 cursor-not-allowed opacity-90"
             >
-              <CheckCircle2 class="w-4 h-4 text-sky-200" />
+              <Clock class="w-4 h-4 text-sky-200" />
               <span>Sudah Dikirim (Menunggu Admin)</span>
             </button>
           </div>
@@ -243,13 +264,13 @@
           class="bg-gradient-to-br from-[#00B775] via-emerald-600 to-teal-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-[#00B775]/25 flex flex-col justify-between text-left space-y-6 relative overflow-hidden group"
         >
           <div class="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none">
-            <CheckCircle2 class="w-64 h-64 text-white" />
+            <Camera class="w-64 h-64 text-white" />
           </div>
 
           <div class="space-y-4 z-10">
             <div class="flex items-center justify-between">
               <div class="w-12 h-12 rounded-2xl bg-white/20 backdrop-blur-md border border-white/30 flex items-center justify-center text-white shadow-inner">
-                <CheckCircle2 class="w-6 h-6 stroke-[2.5]" />
+                <Camera class="w-6 h-6 stroke-[2.5]" />
               </div>
               <span class="text-xs font-bold uppercase tracking-wider text-white bg-white/20 backdrop-blur-md px-3 py-1 rounded-full border border-white/30">
                 Piket Hari Ini
@@ -321,106 +342,6 @@
       </div>
     </main>
 
-    <!-- Teleport Inbox Modal -->
-    <teleport to="body">
-      <div
-        v-if="showInboxModal"
-        class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 text-left font-sans"
-      >
-        <div class="bg-white rounded-3xl border border-slate-200 max-w-md w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div class="flex items-center space-x-2">
-              <Inbox class="w-5 h-5 text-[#00B775]" />
-              <h3 class="text-lg font-extrabold text-slate-900">Inbox Notifikasi</h3>
-            </div>
-            <button @click="showInboxModal = false" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
-              <X class="w-5 h-5" />
-            </button>
-          </div>
-
-          <div class="space-y-3 max-h-64 overflow-y-auto pr-1">
-            <div class="bg-emerald-50/70 border border-emerald-200 rounded-2xl p-3.5 space-y-1">
-              <div class="flex justify-between items-center text-xs font-bold text-[#00B775]">
-                <span>Jadwal Piket</span>
-                <span class="text-[10px] text-slate-400">Hari ini</span>
-              </div>
-              <p class="text-xs text-slate-700 font-medium">
-                Anda memiliki jadwal piket kelas hari ini. Jangan lupa unggah foto bukti kebersihan!
-              </p>
-            </div>
-
-            <div class="bg-slate-50 border border-slate-200 rounded-2xl p-3.5 space-y-1">
-              <div class="flex justify-between items-center text-xs font-bold text-slate-800">
-                <span>Sistem CleanMate</span>
-                <span class="text-[10px] text-slate-400">Kemarin</span>
-              </div>
-              <p class="text-xs text-slate-600 font-medium">
-                Selamat datang di aplikasi Manajemen Piket Kelas CleanMate.
-              </p>
-            </div>
-          </div>
-
-          <button
-            @click="showInboxModal = false"
-            class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-semibold text-xs transition cursor-pointer"
-          >
-            Tutup Inbox
-          </button>
-        </div>
-      </div>
-    </teleport>
-
-    <!-- Teleport History Modal -->
-    <teleport to="body">
-      <div
-        v-if="showHistoryModal"
-        class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50 text-left font-sans"
-      >
-        <div class="bg-white rounded-3xl border border-slate-200 max-w-lg w-full p-6 shadow-2xl space-y-4 animate-in fade-in zoom-in-95 duration-150">
-          <div class="flex items-center justify-between border-b border-slate-100 pb-3">
-            <div class="flex items-center space-x-2">
-              <History class="w-5 h-5 text-[#00B775]" />
-              <h3 class="text-lg font-extrabold text-slate-900">Histori Bukti Piket</h3>
-            </div>
-            <button @click="showHistoryModal = false" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer">
-              <X class="w-5 h-5" />
-            </button>
-          </div>
-
-          <div class="space-y-3 max-h-72 overflow-y-auto pr-1">
-            <div
-              v-for="(hist, idx) in historyList"
-              :key="idx"
-              class="bg-white border border-slate-200/80 rounded-2xl p-3.5 flex items-center justify-between shadow-2xs"
-            >
-              <div>
-                <p class="text-xs font-bold text-slate-900">{{ hist.tanggal }}</p>
-                <p class="text-[11px] text-slate-500 font-medium">Tugas: {{ hist.tugas }}</p>
-              </div>
-              <span
-                :class="[
-                  'text-[10px] font-extrabold px-2.5 py-1 rounded-full border',
-                  hist.status === 'SETUJU'
-                    ? 'bg-emerald-100 text-[#00B775] border-emerald-200'
-                    : hist.status === 'TOLAK'
-                    ? 'bg-rose-100 text-rose-600 border-rose-200'
-                    : 'bg-amber-100 text-amber-700 border-amber-200'
-                ]"
-              >
-                {{ hist.status }}
-              </span>
-            </div>
-          </div>
-
-          <button
-            @click="showHistoryModal = false"
-            class="w-full bg-slate-900 hover:bg-slate-800 text-white py-2.5 rounded-xl font-semibold text-xs transition cursor-pointer"
-          >
-            Tutup Histori
-          </button>
-        </div>
-      </div>
-    </teleport>
   </div>
 </template>
 
@@ -441,7 +362,10 @@ import {
   CalendarCheck,
   Calendar,
   ArrowRight,
-  Sparkles
+  Sparkles,
+  Hourglass,
+  Clock,
+  Camera
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -547,6 +471,16 @@ const isTodayMyDutyDay = computed(() => {
   return todayDutyOfficers.value.some((officer) => isCurrentStudent(officer))
 })
 
+const isApprovedPiket = computed(() => {
+  if (!todayStatus.value.has_uploaded) return false
+  const status = (todayStatus.value.status_approval || '').toLowerCase()
+  return status === 'approved' || status === 'setuju'
+})
+
+const showOffDutyBannerOnApproved = computed(() => {
+  return isApprovedPiket.value && !isTodayMyDutyDay.value
+})
+
 const updateDate = () => {
   const now = new Date()
   const dayName = dayNamesIndo[now.getDay()]
@@ -633,6 +567,45 @@ const fetchDashboardData = async () => {
     loadFallbackHistory()
   } finally {
     loadingSchedule.value = false
+  }
+
+  // 5) Cek Notifikasi Sanksi/Inbox & Status Sanksi Real
+  try {
+    const [resNotif, resSanksi] = await Promise.allSettled([
+      api.get('/siswa/notifications'),
+      api.get('/siswa/sanksi-siswa')
+    ])
+
+    const notifs = resNotif.status === 'fulfilled'
+      ? (Array.isArray(resNotif.value.data) ? resNotif.value.data : (resNotif.value.data?.data || []))
+      : []
+
+    const mySanksi = resSanksi.status === 'fulfilled'
+      ? (Array.isArray(resSanksi.value.data) ? resSanksi.value.data : (resSanksi.value.data?.data || []))
+      : []
+
+    const unreadNotifs = notifs.filter(n => n.read_at === null || (!n.read_at && !n.is_read))
+
+    if (mySanksi.length > 0) {
+      const selesaiCount = mySanksi.filter(s => (s.status_penyelesaian || s.status || '').toLowerCase() === 'selesai').length
+      const belumCount = mySanksi.filter(s => (s.status_penyelesaian || s.status || '').toLowerCase() !== 'selesai').length
+
+      setTimeout(() => {
+        if (selesaiCount > 0 && belumCount > 0) {
+          showToast(`Info Sanksi: ${selesaiCount} Sanksi Selesai dan ${belumCount} Sanksi Belum Selesai. Cek Inbox!`, 'info')
+        } else if (selesaiCount > 0 && belumCount === 0) {
+          showToast(`Semua Sanksi (${selesaiCount}) Anda telah diselesaikan oleh Admin!`, 'success')
+        } else if (belumCount > 0) {
+          showToast(`Perhatian: Anda memiliki ${belumCount} Sanksi yang belum diselesaikan. Cek Inbox!`, 'error')
+        }
+      }, 1000)
+    } else if (unreadNotifs.length > 0) {
+      setTimeout(() => {
+        showToast(`Anda memiliki ${unreadNotifs.length} notifikasi belum dibaca. Cek menu Inbox Anda!`, 'info')
+      }, 1000)
+    }
+  } catch (e) {
+    console.warn('Gagal cek notifikasi & status sanksi', e)
   }
 }
 

@@ -1,5 +1,34 @@
 <template>
-  <div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-[#00B775] selection:text-white">
+  <div class="min-h-screen bg-slate-50 text-slate-800 flex flex-col font-sans selection:bg-[#00B775] selection:text-white relative">
+    <!-- ===== Toast Notification ===== -->
+    <transition
+      enter-active-class="transition duration-300 ease-out"
+      enter-from-class="opacity-0 translate-x-8 scale-95"
+      enter-to-class="opacity-100 translate-x-0 scale-100"
+      leave-active-class="transition duration-200 ease-in"
+      leave-from-class="opacity-100 translate-x-0 scale-100"
+      leave-to-class="opacity-0 translate-x-8 scale-95"
+    >
+      <div
+        v-if="toast.show"
+        :class="[
+          'fixed top-6 right-6 z-[60] px-4 py-3.5 rounded-2xl border shadow-xl flex items-center space-x-3 backdrop-blur-md max-w-sm',
+          toast.type === 'success'
+            ? 'bg-emerald-50/95 border-emerald-200 text-emerald-900'
+            : 'bg-rose-50/95 border-rose-200 text-rose-900'
+        ]"
+      >
+        <div :class="['w-8 h-8 rounded-xl flex items-center justify-center shrink-0', toast.type === 'success' ? 'bg-[#00B775] text-white' : 'bg-rose-600 text-white']">
+          <CheckCircle2 v-if="toast.type === 'success'" class="w-4 h-4" />
+          <AlertCircle v-else class="w-4 h-4" />
+        </div>
+        <div class="text-xs font-bold leading-snug flex-1">{{ toast.message }}</div>
+        <button @click="toast.show = false" class="text-slate-400 hover:text-slate-600 p-1 cursor-pointer shrink-0">
+          <X class="w-4 h-4" />
+        </button>
+      </div>
+    </transition>
+
     <!-- Admin Navbar Component -->
     <AdminNavbar />
 
@@ -263,8 +292,8 @@
             <div v-else class="bg-slate-50 border border-slate-200/80 rounded-xl p-3.5 space-y-3">
               <div class="flex items-start justify-between">
                 <div>
-                  <p class="text-xs font-bold text-slate-700">{{ latestBuktiPiket.siswa?.name || 'Siswa' }}</p>
-                  <p class="text-[10px] text-slate-500">{{ formatDate(latestBuktiPiket.created_at) }}</p>
+                  <p class="text-xs font-bold text-slate-700">{{ latestBuktiPiket.user?.name || latestBuktiPiket.siswa?.name || 'Siswa' }}</p>
+                  <p class="text-[10px] text-slate-500">{{ formatDate(latestBuktiPiket.tanggal || latestBuktiPiket.created_at) }}</p>
                 </div>
                 <span class="text-[10px] font-extrabold px-2 py-0.5 rounded-full border bg-amber-100 text-amber-700 border-amber-200">
                   PENDING
@@ -272,17 +301,33 @@
               </div>
 
               <div class="grid grid-cols-2 gap-2">
-                <a v-if="latestBuktiPiket.foto_1" :href="getImageUrl(latestBuktiPiket.foto_1)" target="_blank" class="block aspect-square bg-slate-200/80 rounded-xl overflow-hidden shadow-inner hover:opacity-90 transition">
+                <div
+                  v-if="latestBuktiPiket.foto_1"
+                  @click="openImageModal(getImageUrl(latestBuktiPiket.foto_1))"
+                  class="block aspect-square bg-slate-200/80 rounded-xl overflow-hidden shadow-inner hover:opacity-90 transition cursor-pointer relative group border border-slate-200"
+                >
                   <img :src="getImageUrl(latestBuktiPiket.foto_1)" alt="Foto 1" class="w-full h-full object-cover" />
-                </a>
-                <div v-else class="aspect-square bg-slate-200/80 rounded-xl flex items-center justify-center text-slate-400 text-xs shadow-inner">
+                  <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold">
+                    <ZoomIn class="w-4 h-4 mr-1" />
+                    <span>Zoom</span>
+                  </div>
+                </div>
+                <div v-else class="aspect-square bg-slate-100 border-2 border-dashed border-slate-200/90 rounded-xl flex items-center justify-center text-slate-400 font-bold text-sm shadow-xs select-none">
                   -
                 </div>
-                
-                <a v-if="latestBuktiPiket.foto_2" :href="getImageUrl(latestBuktiPiket.foto_2)" target="_blank" class="block aspect-square bg-slate-200/80 rounded-xl overflow-hidden shadow-inner hover:opacity-90 transition">
+
+                <div
+                  v-if="latestBuktiPiket.foto_2"
+                  @click="openImageModal(getImageUrl(latestBuktiPiket.foto_2))"
+                  class="block aspect-square bg-slate-200/80 rounded-xl overflow-hidden shadow-inner hover:opacity-90 transition cursor-pointer relative group border border-slate-200"
+                >
                   <img :src="getImageUrl(latestBuktiPiket.foto_2)" alt="Foto 2" class="w-full h-full object-cover" />
-                </a>
-                <div v-else class="aspect-square bg-slate-200/80 rounded-xl flex items-center justify-center text-slate-400 text-xs shadow-inner">
+                  <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white text-[11px] font-bold">
+                    <ZoomIn class="w-4 h-4 mr-1" />
+                    <span>Zoom</span>
+                  </div>
+                </div>
+                <div v-else class="aspect-square bg-slate-100 border-2 border-dashed border-slate-200/90 rounded-xl flex items-center justify-center text-slate-400 font-bold text-sm shadow-xs select-none">
                   -
                 </div>
               </div>
@@ -298,7 +343,7 @@
                   <span v-else>SETUJU</span>
                 </button>
                 <button
-                  @click="verifyBukti(latestBuktiPiket.id, 'rejected')"
+                  @click="openRejectModal(latestBuktiPiket.id)"
                   :disabled="verifyingId === latestBuktiPiket.id"
                   class="bg-rose-600 hover:bg-rose-700 text-white py-2 rounded-xl font-bold text-xs shadow-xs transition cursor-pointer disabled:opacity-70 flex justify-center items-center"
                 >
@@ -319,6 +364,120 @@
         </div>
       </div>
     </main>
+
+    <!-- ===== Teleport Image Preview Modal (Zoom In / Out) ===== -->
+    <teleport to="body">
+      <transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div
+          v-if="previewModal.show"
+          class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-4 font-sans select-none"
+          @click.self="closeImageModal"
+        >
+          <!-- Floating Toolbar Controls -->
+          <div class="fixed top-6 bg-slate-900/90 border border-slate-700/80 rounded-2xl px-4 py-2 flex items-center space-x-3 text-white shadow-2xl backdrop-blur-lg z-[110]">
+            <button
+              type="button"
+              @click="zoomOut"
+              class="p-2 hover:bg-slate-800 rounded-xl transition cursor-pointer text-slate-300 hover:text-white"
+              title="Zoom Out (-)"
+            >
+              <ZoomOut class="w-5 h-5" />
+            </button>
+            <span class="text-xs font-mono font-bold w-12 text-center text-[#00B775]">
+              {{ Math.round(previewModal.zoom * 100) }}%
+            </span>
+            <button
+              type="button"
+              @click="zoomIn"
+              class="p-2 hover:bg-slate-800 rounded-xl transition cursor-pointer text-slate-300 hover:text-white"
+              title="Zoom In (+)"
+            >
+              <ZoomIn class="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              @click="resetZoom"
+              class="p-2 hover:bg-slate-800 rounded-xl transition cursor-pointer text-slate-300 hover:text-white text-xs font-semibold px-2.5"
+              title="Reset Zoom"
+            >
+              Reset
+            </button>
+            <div class="w-px h-5 bg-slate-700"></div>
+            <button
+              type="button"
+              @click="closeImageModal"
+              class="p-2 bg-rose-600/80 hover:bg-rose-600 rounded-xl transition cursor-pointer text-white"
+              title="Tutup Modal"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- Image Display Area -->
+          <div class="w-full h-full flex items-center justify-center overflow-auto p-8 max-w-5xl max-h-[85vh]">
+            <img
+              :src="previewModal.url"
+              alt="Bukti Piket Large Preview"
+              class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-transform duration-200 ease-out"
+              :style="{ transform: `scale(${previewModal.zoom})` }"
+            />
+          </div>
+        </div>
+      </transition>
+    </teleport>
+
+    <!-- ===== MODAL: Alasan Tolak (Dashboard) ===== -->
+    <teleport to="body">
+      <transition enter-active-class="transition duration-200 ease-out" enter-from-class="opacity-0 scale-95" enter-to-class="opacity-100 scale-100">
+        <div v-if="showRejectModal" class="fixed inset-0 bg-slate-950/60 backdrop-blur-sm flex items-center justify-center p-4 z-50">
+          <div class="bg-white/95 backdrop-blur-md rounded-3xl border border-slate-200 max-w-md w-full p-6 sm:p-8 shadow-2xl text-left space-y-5">
+            <div class="flex items-center justify-between border-b border-slate-100 pb-3">
+              <div>
+                <h3 class="text-xl font-extrabold text-slate-900">Tolak Bukti Piket</h3>
+                <p class="text-xs text-slate-500 font-medium">Berikan alasan mengapa laporan ditolak.</p>
+              </div>
+              <button @click="closeRejectModal" class="text-slate-400 hover:text-slate-600 p-1.5 hover:bg-slate-100 rounded-xl transition cursor-pointer">
+                <X class="w-5 h-5" />
+              </button>
+            </div>
+
+            <form @submit.prevent="submitReject" class="space-y-4">
+              <div class="space-y-1.5">
+                <label class="block text-slate-800 font-bold text-sm">Catatan Admin <span class="text-rose-500">*</span></label>
+                <textarea
+                  v-model="rejectReason"
+                  rows="3"
+                  required
+                  placeholder="Contoh: Foto kurang jelas, atau kelas masih kotor..."
+                  class="w-full px-4 py-2.5 bg-white border border-slate-200 rounded-xl text-sm focus:outline-none focus:ring-2 focus:ring-rose-500 focus:border-transparent transition-all shadow-xs resize-none"
+                ></textarea>
+              </div>
+
+              <div class="flex items-center justify-end space-x-3 pt-3 border-t border-slate-100">
+                <button type="button" @click="closeRejectModal" class="px-5 py-2.5 rounded-xl border border-slate-300 text-slate-700 font-bold text-sm hover:bg-slate-100 transition cursor-pointer">
+                  Batal
+                </button>
+                <button
+                  type="submit"
+                  :disabled="submittingReject || !rejectReason.trim()"
+                  class="bg-rose-600 hover:bg-rose-700 text-white px-6 py-2.5 rounded-xl font-bold text-sm shadow-md shadow-rose-600/20 transition disabled:opacity-70 cursor-pointer flex items-center space-x-2"
+                >
+                  <span>{{ submittingReject ? 'Memproses...' : 'Tolak Laporan' }}</span>
+                </button>
+              </div>
+            </form>
+          </div>
+        </div>
+      </transition>
+    </teleport>
+
   </div>
 </template>
 
@@ -335,10 +494,57 @@ import {
   AlertTriangle,
   Calendar,
   Camera,
-  ChevronRight
+  ChevronRight,
+  ZoomIn,
+  ZoomOut,
+  X,
+  CheckCircle2,
+  AlertCircle
 } from 'lucide-vue-next'
 
 const router = useRouter()
+
+// ===== Toast Notification State & Handler =====
+const toast = ref({ show: false, message: '', type: 'success' })
+let toastTimer = null
+
+const showToast = (message, type = 'success') => {
+  toast.value = { show: true, message, type }
+  if (toastTimer) clearTimeout(toastTimer)
+  toastTimer = setTimeout(() => { toast.value.show = false }, 3500)
+}
+
+// ===== Image Zoom Preview Modal State & Handlers =====
+const previewModal = ref({
+  show: false,
+  url: '',
+  zoom: 1
+})
+
+const openImageModal = (url) => {
+  if (!url) return
+  previewModal.value = { show: true, url, zoom: 1 }
+}
+
+const closeImageModal = () => {
+  previewModal.value.show = false
+}
+
+const zoomIn = () => {
+  if (previewModal.value.zoom < 3) {
+    previewModal.value.zoom = Number((previewModal.value.zoom + 0.25).toFixed(2))
+  }
+}
+
+const zoomOut = () => {
+  if (previewModal.value.zoom > 0.5) {
+    previewModal.value.zoom = Number((previewModal.value.zoom - 0.25).toFixed(2))
+  }
+}
+
+const resetZoom = () => {
+  previewModal.value.zoom = 1
+}
 
 const currentDayName = ref('')
 const formattedDateOnly = ref('')
@@ -469,7 +675,8 @@ const getImageUrl = (path) => {
 
 const formatDate = (dateString) => {
   if (!dateString) return '-'
-  const date = new Date(dateString)
+  const date = typeof dateString === 'string' && dateString.length === 10 ? new Date(`${dateString}T00:00:00`) : new Date(dateString)
+  if (isNaN(date.getTime())) return dateString
   return new Intl.DateTimeFormat('id-ID', { weekday: 'long', day: '2-digit', month: 'long', year: 'numeric' }).format(date)
 }
 
@@ -490,19 +697,48 @@ const fetchBuktiTerbaru = async () => {
   }
 }
 
-const verifyBukti = async (id, status) => {
+const showRejectModal = ref(false)
+const rejectingId = ref(null)
+const rejectReason = ref('')
+const submittingReject = ref(false)
+
+const openRejectModal = (id) => {
+  rejectingId.value = id
+  rejectReason.value = ''
+  showRejectModal.value = true
+}
+
+const closeRejectModal = () => {
+  showRejectModal.value = false
+  rejectingId.value = null
+  rejectReason.value = ''
+}
+
+const verifyBukti = async (id, status, catatan = '') => {
   verifyingId.value = id
   verifyStatus.value = status
   try {
-    await api.patch(`/admin/bukti-piket/${id}/status`, { status_approval: status })
+    await api.patch(`/admin/bukti-piket/${id}/status`, {
+      status_approval: status,
+      ...(catatan ? { catatan_admin: catatan } : {})
+    })
+    showToast(`Bukti piket berhasil di-${status === 'approved' ? 'setujui' : 'tolak'}!`, 'success')
     await fetchBuktiTerbaru()
   } catch (err) {
     console.error('Gagal memverifikasi bukti:', err)
-    alert('Terjadi kesalahan saat memverifikasi bukti piket.')
+    showToast('Terjadi kesalahan saat memverifikasi bukti piket.', 'error')
   } finally {
     verifyingId.value = null
     verifyStatus.value = ''
   }
+}
+
+const submitReject = async () => {
+  if (!rejectingId.value || !rejectReason.value.trim()) return
+  submittingReject.value = true
+  await verifyBukti(rejectingId.value, 'rejected', rejectReason.value)
+  submittingReject.value = false
+  closeRejectModal()
 }
 
 

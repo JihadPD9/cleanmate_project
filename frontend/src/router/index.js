@@ -6,6 +6,8 @@ import LoginPage from '@/views/LoginPage.vue'
 import AdminDashboard from '@/views/admin/Dashboard.vue'
 import TasksManagement from '@/views/admin/TasksManagement.vue'
 import SiswaDashboard from '@/views/siswa/Dashboard.vue'
+import SiswaHistory from '@/views/siswa/History.vue'
+import SiswaInbox from '@/views/siswa/Inbox.vue'
 import SanksiManagement from '@/views/admin/SanksiManagement.vue'
 import SiswaManagement from '@/views/admin/SiswaManagement.vue'
 import JadwalManagement from '@/views/admin/JadwalManagement.vue'
@@ -33,6 +35,18 @@ const routes = [
     path: '/siswa/upload-bukti',
     name: 'UploadBukti',
     component: UploadBuktiPage,
+    meta: { requiresAuth: true, role: 'siswa' },
+  },
+  {
+    path: '/siswa/history',
+    name: 'SiswaHistory',
+    component: SiswaHistory,
+    meta: { requiresAuth: true, role: 'siswa' },
+  },
+  {
+    path: '/siswa/inbox',
+    name: 'SiswaInbox',
+    component: SiswaInbox,
     meta: { requiresAuth: true, role: 'siswa' },
   },
   {

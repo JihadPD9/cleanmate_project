@@ -4,6 +4,10 @@ namespace App\Http\Controllers\Api;
 
 use App\Http\Controllers\Controller;
 use App\Models\BuktiPiket;
+use App\Models\Sanksi;
+use App\Models\SanksiSiswa;
+use App\Models\User;
+use App\Notifications\SanksiNotification;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Storage;
 use Carbon\Carbon;
@@ -50,12 +54,13 @@ class BuktiPiketController extends Controller
     public function store(Request $request)
     {
         $request->validate([
-            'tanggal'   => 'required|date',
-            'foto_1'    => 'required|image|mimes:jpeg,png,jpg|max:2048',
-            'foto_2'    => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
-            'deskripsi' => 'nullable|string',
-            'tasks'     => 'required', // Array ID task yang dikerjakan
-            'tasks.*'   => 'integer|exists:tasks,id',
+            'tanggal'           => 'required|date',
+            'foto_1'            => 'required|image|mimes:jpeg,png,jpg|max:2048',
+            'foto_2'            => 'nullable|image|mimes:jpeg,png,jpg|max:2048',
+            'deskripsi'         => 'nullable|string',
+            'tasks'             => 'required', // Array ID task yang dikerjakan
+            'tasks.*'           => 'integer|exists:tasks,id',
+            'siswa_tidak_piket' => 'nullable', // Array ID siswa yang dilaporkan tidak piket
         ]);
 
         // Proteksi Kelompok: Cek apakah hari ini sudah ada bukti piket kelompok yang 'pending' atau 'approved'
@@ -93,6 +98,39 @@ class BuktiPiketController extends Controller
 
         // Sync relasi ke tabel pivot detail_bukti_tugas
         $bukti->tasks()->attach($request->tasks);
+
+        // =========================================================================
+        // LOGIKA BARU: Otomatis Terbitkan Sanksi ID 1 Untuk Siswa Yang Laporkan Tidak Piket
+        // =========================================================================
+        if ($request->has('siswa_tidak_piket')) {
+            $siswaTidakPiket = is_array($request->siswa_tidak_piket) 
+                ? $request->siswa_tidak_piket 
+                : json_decode($request->siswa_tidak_piket, true);
+
+            if (is_array($siswaTidakPiket) && count($siswaTidakPiket) > 0) {
+                // Cari ID Master Sanksi default (utamakan ID 1, atau sanksi pertama yang tersedia)
+                $defaultSanksi = Sanksi::first();
+                $targetSanksiId = $defaultSanksi ? $defaultSanksi->id : 1;
+
+                $uploaderName = $request->user()->name;
+
+                foreach ($siswaTidakPiket as $userId) {
+                    $sanksiSiswa = SanksiSiswa::create([
+                        'user_id'             => $userId,
+                        'sanksi_id'           => $targetSanksiId,
+                        'tipe_sanksi'         => 'individu',
+                        'alasan'              => "Dilaporkan tidak piket oleh {$uploaderName}. Catatan: " . ($request->deskripsi ?? '-'),
+                        'status_penyelesaian' => 'belum',
+                    ]);
+
+                    // Kirim notifikasi inbox ke siswa yang membolos
+                    $targetUser = User::find($userId);
+                    if ($targetUser) {
+                        $targetUser->notify(new SanksiNotification($sanksiSiswa));
+                    }
+                }
+            }
+        }
 
         return response()->json([
             'message' => 'Bukti piket berhasil diunggah',

@@ -153,7 +153,7 @@ const handleLogin = async () => {
     'siswa'
   )
 
-  if (resSiswa.success && !resSiswa.fallback) {
+  if (resSiswa.success) {
     const redirectPath = route.query.redirect || '/siswa/dashboard'
     router.push(redirectPath)
     return
@@ -165,25 +165,14 @@ const handleLogin = async () => {
     'admin'
   )
 
-  if (resAdmin.success && !resAdmin.fallback) {
+  if (resAdmin.success) {
     const redirectPath = route.query.redirect || '/admin/dashboard'
     router.push(redirectPath)
     return
   }
 
-  // Handle jika backend offline / fallback client-side testing:
-  if (resSiswa.fallback || resAdmin.fallback) {
-    const isAdminEmail = email.value.toLowerCase().includes('admin') || email.value.toLowerCase().includes('guru')
-    const finalRole = isAdminEmail ? 'admin' : 'siswa'
-    
-    await authStore.login({ email: email.value, password: password.value }, finalRole)
-    const redirectPath = route.query.redirect || (finalRole === 'admin' ? '/admin/dashboard' : '/siswa/dashboard')
-    router.push(redirectPath)
-    return
-  }
-
   // 3. Jika kedua request gagal
-  errorMessage.value = 'Email atau password yang Anda masukkan salah.'
+  errorMessage.value = resAdmin.error || resSiswa.error || 'Email atau password yang Anda masukkan salah.'
 }
 
 const showAdminHelpAlert = () => {

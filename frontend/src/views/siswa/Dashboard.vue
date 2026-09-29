@@ -131,10 +131,10 @@
         </div>
 
         <!-- Option A: Jika Bukti Piket Kelompok Hari Ini Sudah Di-upload (has_uploaded === true) -->
-        <!-- a. Status Pending (Menunggu Verifikasi) -->
+        <!-- a. Status Pending (Menunggu Verifikasi) - Warna Kuning Amber -->
         <div
           v-else-if="todayStatus.has_uploaded && (todayStatus.status_approval === 'pending' || todayStatus.status_approval === 'PENDING')"
-          class="bg-gradient-to-br from-sky-500 via-blue-600 to-indigo-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-sky-500/25 flex flex-col justify-between text-left space-y-6 relative overflow-hidden group"
+          class="bg-gradient-to-br from-amber-500 via-amber-600 to-yellow-600 text-white rounded-3xl p-6 sm:p-8 shadow-xl shadow-amber-500/25 flex flex-col justify-between text-left space-y-6 relative overflow-hidden group"
         >
           <div class="absolute -right-8 -bottom-8 opacity-10 group-hover:opacity-20 transition-opacity duration-300 pointer-events-none">
             <Hourglass class="w-64 h-64 text-white" />
@@ -154,10 +154,59 @@
               <h2 class="text-2xl sm:text-3xl font-extrabold leading-snug tracking-tight">
                 Bukti Piket Dikirim
               </h2>
-              <p class="text-sky-100 text-xs sm:text-sm font-medium leading-relaxed">
+              <p class="text-amber-100 text-xs sm:text-sm font-medium leading-relaxed">
                 Bukti Piket Kelompok Hari Ini Telah Dikirim oleh
-                <span class="font-extrabold text-white underline decoration-sky-300 underline-offset-4">{{ todayStatus.uploader_name || todayStatus.uploader?.name || 'Anggota Kelompok' }}</span>
+                <span class="font-extrabold text-white underline decoration-amber-300 underline-offset-4">{{ todayStatus.uploader_name || todayStatus.uploader?.name || 'Anggota Kelompok' }}</span>
               </p>
+
+              <!-- Detail Hasil Upload Bukti Piket (Foto, Tugas, Catatan) -->
+              <div v-if="todayStatus.foto_1 || todayStatus.foto_2 || todayStatus.deskripsi || (todayStatus.tasks && todayStatus.tasks.length > 0)" class="bg-white/15 border border-white/20 rounded-2xl p-3 backdrop-blur-xs space-y-2 text-xs text-left mt-2">
+                <div v-if="todayStatus.tasks && todayStatus.tasks.length > 0" class="space-y-1">
+                  <p class="text-[10px] font-extrabold uppercase tracking-wider text-white/80">Tugas Dikerjakan:</p>
+                  <div class="flex flex-wrap gap-1">
+                    <span
+                      v-for="t in todayStatus.tasks"
+                      :key="t.id"
+                      class="bg-white/20 text-white border border-white/30 px-2 py-0.5 rounded-lg text-[11px] font-bold"
+                    >
+                      {{ t.nama_tugas }}
+                    </span>
+                  </div>
+                </div>
+
+                <div v-if="todayStatus.deskripsi" class="space-y-0.5">
+                  <p class="text-[10px] font-extrabold uppercase tracking-wider text-white/80">Catatan Upload:</p>
+                  <p class="text-xs font-medium text-white italic">"{{ todayStatus.deskripsi }}"</p>
+                </div>
+
+                <div v-if="todayStatus.foto_1 || todayStatus.foto_2" class="space-y-1 pt-1 border-t border-white/15">
+                  <p class="text-[10px] font-extrabold uppercase tracking-wider text-white/80">Foto Bukti Upload:</p>
+                  <div class="flex items-center space-x-2">
+                    <div
+                      v-if="todayStatus.foto_1"
+                      @click="openImageModal(getImageUrl(todayStatus.foto_1))"
+                      class="w-14 h-14 bg-white/20 rounded-xl overflow-hidden border border-white/30 hover:border-white hover:scale-105 transition cursor-pointer relative group shrink-0 shadow-xs"
+                      title="Klik untuk Zoom"
+                    >
+                      <img :src="getImageUrl(todayStatus.foto_1)" alt="Foto 1" class="w-full h-full object-cover" />
+                      <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <ZoomIn class="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                    <div
+                      v-if="todayStatus.foto_2"
+                      @click="openImageModal(getImageUrl(todayStatus.foto_2))"
+                      class="w-14 h-14 bg-white/20 rounded-xl overflow-hidden border border-white/30 hover:border-white hover:scale-105 transition cursor-pointer relative group shrink-0 shadow-xs"
+                      title="Klik untuk Zoom"
+                    >
+                      <img :src="getImageUrl(todayStatus.foto_2)" alt="Foto 2" class="w-full h-full object-cover" />
+                      <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <ZoomIn class="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
             </div>
           </div>
 
@@ -166,7 +215,7 @@
               disabled
               class="w-full bg-white/20 backdrop-blur-md text-white py-3.5 px-5 rounded-2xl font-bold text-xs sm:text-sm border border-white/30 flex items-center justify-center space-x-2 cursor-not-allowed opacity-90"
             >
-              <Clock class="w-4 h-4 text-sky-200" />
+              <Clock class="w-4 h-4 text-amber-200" />
               <span>Sudah Dikirim (Menunggu Admin)</span>
             </button>
           </div>
@@ -197,8 +246,61 @@
               </h2>
               <p class="text-emerald-100 text-xs sm:text-sm font-medium leading-relaxed">
                 Piket Kelompok Hari Ini Selesai & Disetujui Admin. Terima kasih sudah menjaga kebersihan kelas!
+                <br v-if="todayStatus.uploader_name || todayStatus.uploader?.name" />
+                <span v-if="todayStatus.uploader_name || todayStatus.uploader?.name" class="inline-block mt-1 text-xs font-extrabold text-white bg-white/20 px-2.5 py-0.5 rounded-lg border border-white/30">
+                  👤 Diunggah oleh: {{ todayStatus.uploader_name || todayStatus.uploader?.name }}
+                </span>
               </p>
-            </div>
+
+              <!-- Detail Hasil Upload Bukti Piket (Foto, Tugas, Catatan) -->
+              <div v-if="todayStatus.foto_1 || todayStatus.foto_2 || todayStatus.deskripsi || (todayStatus.tasks && todayStatus.tasks.length > 0)" class="bg-white/15 border border-white/20 rounded-2xl p-3 backdrop-blur-xs space-y-2 text-xs text-left mt-2">
+                <div v-if="todayStatus.tasks && todayStatus.tasks.length > 0" class="space-y-1">
+                  <p class="text-[10px] font-extrabold uppercase tracking-wider text-white/80">Tugas Dikerjakan:</p>
+                  <div class="flex flex-wrap gap-1">
+                    <span
+                      v-for="t in todayStatus.tasks"
+                      :key="t.id"
+                      class="bg-white/20 text-white border border-white/30 px-2 py-0.5 rounded-lg text-[11px] font-bold"
+                    >
+                      {{ t.nama_tugas }}
+                    </span>
+                  </div>
+                </div>
+
+                <div v-if="todayStatus.deskripsi" class="space-y-0.5">
+                  <p class="text-[10px] font-extrabold uppercase tracking-wider text-white/80">Catatan Upload:</p>
+                  <p class="text-xs font-medium text-white italic">"{{ todayStatus.deskripsi }}"</p>
+                </div>
+
+                <div v-if="todayStatus.foto_1 || todayStatus.foto_2" class="space-y-1 pt-1 border-t border-white/15">
+                  <p class="text-[10px] font-extrabold uppercase tracking-wider text-white/80">Foto Bukti Upload:</p>
+                  <div class="flex items-center space-x-2">
+                    <div
+                      v-if="todayStatus.foto_1"
+                      @click="openImageModal(getImageUrl(todayStatus.foto_1))"
+                      class="w-14 h-14 bg-white/20 rounded-xl overflow-hidden border border-white/30 hover:border-white hover:scale-105 transition cursor-pointer relative group shrink-0 shadow-xs"
+                      title="Klik untuk Zoom"
+                    >
+                      <img :src="getImageUrl(todayStatus.foto_1)" alt="Foto 1" class="w-full h-full object-cover" />
+                      <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <ZoomIn class="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                    <div
+                      v-if="todayStatus.foto_2"
+                      @click="openImageModal(getImageUrl(todayStatus.foto_2))"
+                      class="w-14 h-14 bg-white/20 rounded-xl overflow-hidden border border-white/30 hover:border-white hover:scale-105 transition cursor-pointer relative group shrink-0 shadow-xs"
+                      title="Klik untuk Zoom"
+                    >
+                      <img :src="getImageUrl(todayStatus.foto_2)" alt="Foto 2" class="w-full h-full object-cover" />
+                      <div class="absolute inset-0 bg-slate-900/40 opacity-0 group-hover:opacity-100 transition-opacity flex items-center justify-center text-white">
+                        <ZoomIn class="w-3.5 h-3.5" />
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </div>
+              </div>
           </div>
 
           <div class="z-10 pt-2">
@@ -342,6 +444,73 @@
       </div>
     </main>
 
+    <!-- ===== Teleport Image Preview Modal (Zoom In / Out) ===== -->
+    <teleport to="body">
+      <transition
+        enter-active-class="transition duration-200 ease-out"
+        enter-from-class="opacity-0 scale-95"
+        enter-to-class="opacity-100 scale-100"
+        leave-active-class="transition duration-150 ease-in"
+        leave-from-class="opacity-100 scale-100"
+        leave-to-class="opacity-0 scale-95"
+      >
+        <div
+          v-if="previewModal.show"
+          class="fixed inset-0 bg-slate-950/85 backdrop-blur-md z-[100] flex flex-col items-center justify-center p-4 font-sans select-none"
+          @click.self="closeImageModal"
+        >
+          <!-- Floating Toolbar Controls -->
+          <div class="fixed top-6 bg-slate-900/90 border border-slate-700/80 rounded-2xl px-4 py-2 flex items-center space-x-3 text-white shadow-2xl backdrop-blur-lg z-[110]">
+            <button
+              type="button"
+              @click="zoomOut"
+              class="p-2 hover:bg-slate-800 rounded-xl transition cursor-pointer text-slate-300 hover:text-white"
+              title="Zoom Out (-)"
+            >
+              <ZoomOut class="w-5 h-5" />
+            </button>
+            <span class="text-xs font-mono font-bold w-12 text-center text-[#00B775]">
+              {{ Math.round(previewModal.zoom * 100) }}%
+            </span>
+            <button
+              type="button"
+              @click="zoomIn"
+              class="p-2 hover:bg-slate-800 rounded-xl transition cursor-pointer text-slate-300 hover:text-white"
+              title="Zoom In (+)"
+            >
+              <ZoomIn class="w-5 h-5" />
+            </button>
+            <button
+              type="button"
+              @click="resetZoom"
+              class="p-2 hover:bg-slate-800 rounded-xl transition cursor-pointer text-slate-300 hover:text-white text-xs font-semibold px-2.5"
+              title="Reset Zoom"
+            >
+              Reset
+            </button>
+            <div class="w-px h-5 bg-slate-700"></div>
+            <button
+              type="button"
+              @click="closeImageModal"
+              class="p-2 bg-rose-600/80 hover:bg-rose-600 rounded-xl transition cursor-pointer text-white"
+              title="Tutup Modal"
+            >
+              <X class="w-5 h-5" />
+            </button>
+          </div>
+
+          <!-- Image Display Area -->
+          <div class="w-full h-full flex items-center justify-center overflow-auto p-8 max-w-5xl max-h-[85vh]">
+            <img
+              :src="previewModal.url"
+              alt="Bukti Piket Large Preview"
+              class="max-w-full max-h-full object-contain rounded-2xl shadow-2xl transition-transform duration-200 ease-out"
+              :style="{ transform: `scale(${previewModal.zoom})` }"
+            />
+          </div>
+        </div>
+      </transition>
+    </teleport>
   </div>
 </template>
 
@@ -365,7 +534,9 @@ import {
   Sparkles,
   Hourglass,
   Clock,
-  Camera
+  Camera,
+  ZoomIn,
+  ZoomOut
 } from 'lucide-vue-next'
 
 const router = useRouter()
@@ -385,8 +556,49 @@ const todayStatus = ref({
   has_uploaded: false,
   status_approval: null,
   uploader_name: '',
-  catatan_admin: ''
+  catatan_admin: '',
+  foto_1: null,
+  foto_2: null,
+  deskripsi: '',
+  tasks: []
 })
+
+// Image Zoom Modal State
+const previewModal = ref({
+  show: false,
+  url: '',
+  zoom: 1
+})
+
+const openImageModal = (url) => {
+  if (!url) return
+  previewModal.value = { show: true, url, zoom: 1 }
+}
+
+const closeImageModal = () => {
+  previewModal.value.show = false
+}
+
+const zoomIn = () => {
+  if (previewModal.value.zoom < 3) {
+    previewModal.value.zoom = Number((previewModal.value.zoom + 0.25).toFixed(2))
+  }
+}
+
+const zoomOut = () => {
+  if (previewModal.value.zoom > 0.5) {
+    previewModal.value.zoom = Number((previewModal.value.zoom - 0.25).toFixed(2))
+  }
+}
+
+const resetZoom = () => {
+  previewModal.value.zoom = 1
+}
+
+const getImageUrl = (path) => {
+  if (!path) return ''
+  return `http://127.0.0.1:8000/storage/${path}`
+}
 
 const toast = ref({
   show: false,
@@ -508,7 +720,11 @@ const fetchDashboardData = async () => {
         has_uploaded: hasUploaded,
         status_approval: buktiRecord?.status_approval || buktiRecord?.status || null,
         uploader_name: buktiRecord?.user?.name || buktiRecord?.uploader_name || '',
-        catatan_admin: buktiRecord?.catatan_admin || buktiRecord?.catatan || ''
+        catatan_admin: buktiRecord?.catatan_admin || buktiRecord?.catatan || '',
+        foto_1: buktiRecord?.foto_1 || null,
+        foto_2: buktiRecord?.foto_2 || null,
+        deskripsi: buktiRecord?.deskripsi || buktiRecord?.catatan || '',
+        tasks: buktiRecord?.tasks || []
       }
     } catch (errStatus) {
       console.warn('Gagal memuat status bukti piket hari ini:', errStatus)

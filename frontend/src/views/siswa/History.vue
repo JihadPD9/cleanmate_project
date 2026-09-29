@@ -16,7 +16,7 @@
         <span class="text-slate-900 font-bold">Histori Bukti Piket</span>
       </nav>
 
-      <!-- Header -->
+      <!-- Header & Filter -->
       <div class="flex flex-col md:flex-row md:items-center justify-between gap-4 bg-white border border-slate-200/80 rounded-3xl p-6 shadow-xs text-left">
         <div class="space-y-1">
           <div class="inline-flex items-center space-x-2 px-3 py-1 rounded-full bg-emerald-100/80 border border-emerald-200 text-[#00B775] text-xs font-semibold">
@@ -24,7 +24,23 @@
             <span>Histori Upload</span>
           </div>
           <h1 class="text-2xl md:text-3xl font-extrabold text-slate-900 tracking-tight">Histori Bukti Piket</h1>
-          <p class="text-slate-600 text-sm">Lihat kembali seluruh foto bukti, status verifikasi admin, dan catatan tugas Anda.</p>
+          <p class="text-slate-600 text-sm">Lihat kembali foto bukti, status verifikasi, dan catatan piket Anda.</p>
+        </div>
+
+        <!-- Month Filter Dropdown -->
+        <div class="flex items-center space-x-2 self-start md:self-auto bg-slate-50 border border-slate-200 rounded-2xl p-1.5 px-3">
+          <Filter class="w-4 h-4 text-[#00B775]" />
+          <span class="text-xs font-bold text-slate-600">Bulan:</span>
+          <select
+            v-model="selectedMonth"
+            class="bg-transparent text-xs font-bold text-slate-800 focus:outline-none cursor-pointer py-1 pr-2"
+          >
+            <option value="all">Semua Bulan</option>
+            <option value="current">Bulan Ini (30 Hari Terakhir)</option>
+            <option v-for="m in monthOptions" :key="m.value" :value="m.value">
+              {{ m.label }}
+            </option>
+          </select>
         </div>
       </div>
 
@@ -40,18 +56,18 @@
         </div>
 
         <!-- Empty State -->
-        <div v-else-if="historyList.length === 0" class="bg-white border border-slate-200/80 rounded-3xl p-14 text-center shadow-xs">
+        <div v-else-if="filteredHistoryList.length === 0" class="bg-white border border-slate-200/80 rounded-3xl p-14 text-center shadow-xs">
           <div class="w-16 h-16 rounded-2xl bg-emerald-50 flex items-center justify-center mx-auto mb-4 border border-emerald-100">
             <History class="w-8 h-8 text-[#00B775]" />
           </div>
           <p class="text-slate-600 font-bold text-sm">Belum Ada Histori Bukti Piket</p>
-          <p class="text-slate-400 text-xs mt-1">Anda belum pernah mengunggah foto bukti piket ke dalam sistem.</p>
+          <p class="text-slate-400 text-xs mt-1">Tidak ada riwayat bukti piket pada periode/bulan yang dipilih.</p>
         </div>
 
         <!-- List Cards -->
         <div v-else class="space-y-4">
           <div
-            v-for="item in historyList"
+            v-for="item in filteredHistoryList"
             :key="item.id"
             class="bg-white border border-slate-200/90 rounded-3xl p-6 shadow-xs space-y-4 text-left hover:border-emerald-300 transition-all duration-200"
           >
@@ -234,7 +250,7 @@
 </template>
 
 <script setup>
-import { ref, onMounted } from 'vue'
+import { ref, computed, onMounted } from 'vue'
 import api from '@/utils/api'
 import SiswaNavbar from '@/components/SiswaNavbar.vue'
 import {
@@ -246,11 +262,56 @@ import {
   AlertCircle,
   ZoomIn,
   ZoomOut,
-  X
+  X,
+  Filter
 } from 'lucide-vue-next'
 
 const historyList = ref([])
 const loading = ref(false)
+
+// Month Filter State & Options
+const selectedMonth = ref('current')
+
+const monthOptions = computed(() => {
+  const options = []
+  const now = new Date()
+  for (let i = 0; i < 6; i++) {
+    const d = new Date(now.getFullYear(), now.getMonth() - i, 1)
+    const val = `${d.getFullYear()}-${String(d.getMonth() + 1).padStart(2, '0')}`
+    const label = new Intl.DateTimeFormat('id-ID', { month: 'long', year: 'numeric' }).format(d)
+    options.push({ value: val, label })
+  }
+  return options
+})
+
+const filteredHistoryList = computed(() => {
+  if (!historyList.value || historyList.value.length === 0) return []
+
+  if (selectedMonth.value === 'all') {
+    return historyList.value
+  }
+
+  if (selectedMonth.value === 'current') {
+    // 30 hari terakhir
+    const thirtyDaysAgo = new Date()
+    thirtyDaysAgo.setDate(thirtyDaysAgo.getDate() - 30)
+    thirtyDaysAgo.setHours(0, 0, 0, 0)
+
+    return historyList.value.filter(item => {
+      const dateStr = item.tanggal || item.created_at
+      if (!dateStr) return false
+      const itemDate = typeof dateStr === 'string' && dateStr.length === 10 ? new Date(`${dateStr}T00:00:00`) : new Date(dateStr)
+      return itemDate >= thirtyDaysAgo
+    })
+  }
+
+  // Filter berdasarkan YYYY-MM spesifik
+  return historyList.value.filter(item => {
+    const dateStr = item.tanggal || item.created_at
+    if (!dateStr) return false
+    return dateStr.startsWith(selectedMonth.value)
+  })
+})
 
 // Image Zoom Modal State
 const previewModal = ref({

@@ -208,11 +208,46 @@
             <textarea
               v-model="catatan"
               rows="3"
-              placeholder="Catatan tambahan (opsional, contoh: sebutkan jika ada anggota piket yang tidak hadir)..."
+              placeholder="Catatan tambahan (opsional)..."
               class="w-full px-4 py-3 bg-white border border-slate-200 rounded-2xl text-xs sm:text-sm focus:outline-none focus:ring-2 focus:ring-[#00B775] focus:border-transparent transition-all shadow-xs"
             ></textarea>
             <p class="text-[11px] text-slate-400 font-medium">
-              Gunakan catatan ini jika ada kendala atau laporan anggota piket yang tidak bertugas.
+              Tuliskan catatan tambahan jika ada hal khusus mengenai kondisi kelas hari ini.
+            </p>
+          </div>
+
+          <!-- 6. Siswa Yang Tidak Ikut Piket (Laporan Otomatis Sanksi ID 1) -->
+          <div v-if="absentCandidates.length > 0" class="space-y-3 pt-2 border-t border-slate-100">
+            <div class="flex flex-col sm:flex-row sm:items-center justify-between gap-1">
+              <label class="block text-xs font-extrabold uppercase tracking-wider text-rose-600 flex items-center space-x-1.5">
+                <AlertCircle class="w-4 h-4 text-rose-600 shrink-0" />
+                <span>Laporkan Siswa Yang Tidak Piket <span class="text-slate-400 font-normal lowercase">(opsional)</span></span>
+              </label>
+              <span class="text-[11px] text-slate-500 font-semibold">Centang nama anggota yang membolos</span>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 gap-2.5">
+              <label
+                v-for="siswa in absentCandidates"
+                :key="siswa.id"
+                :class="[
+                  'p-3.5 rounded-2xl border transition-all duration-200 cursor-pointer flex items-center space-x-3 text-xs sm:text-sm font-bold',
+                  selectedAbsentUserIds.includes(siswa.id)
+                    ? 'bg-rose-50 border-rose-500 text-rose-700 shadow-xs ring-2 ring-rose-200'
+                    : 'bg-white border-slate-200 text-slate-700 hover:border-rose-300'
+                ]"
+              >
+                <input
+                  type="checkbox"
+                  :value="siswa.id"
+                  v-model="selectedAbsentUserIds"
+                  class="w-4 h-4 rounded text-rose-600 focus:ring-rose-500 accent-rose-600"
+                />
+                <span class="truncate">{{ siswa.name }}</span>
+              </label>
+            </div>
+            <p class="text-[11px] text-slate-400 font-medium italic">
+              * Siswa yang dicentang akan otomatis menerima sanksi (Sanksi ID 1) dari sistem.
             </p>
           </div>
 
@@ -345,6 +380,8 @@ const availableTasks = ref([])
 const selectedTaskIds = ref([])
 const uploadedFiles = ref([])
 const catatan = ref('')
+const absentCandidates = ref([])
+const selectedAbsentUserIds = ref([])
 
 const fileInputRef = ref(null)
 
@@ -355,6 +392,11 @@ const toast = ref({
 })
 
 const dayNamesIndo = ['Minggu', 'Senin', 'Selasa', 'Rabu', 'Kamis', 'Jumat', 'Sabtu']
+
+const currentUserId = computed(() => {
+  const user = authStore.user
+  return user?.id || null
+})
 
 // Dynamic Student Name
 const studentName = computed(() => {
@@ -389,6 +431,51 @@ const updateDateInfo = () => {
   formattedDate.value = `${dd}-${mm}-${yyyy}`
 }
 
+// Fetch hari ini daftar anggota piket sekelompok (kecualikan siswa yang login)
+const fetchTodayOfficers = async () => {
+  try {
+    let classSchedules = []
+    try {
+      const res = await api.get('/siswa/jadwal-piket/kelas')
+      classSchedules = Array.isArray(res.data) ? res.data : (res.data?.data || [])
+    } catch (e) {
+      try {
+        const resAlt = await api.get('/siswa/jadwal-piket')
+        classSchedules = Array.isArray(resAlt.data) ? resAlt.data : (resAlt.data?.data || [])
+      } catch (e2) {
+        classSchedules = []
+      }
+    }
+
+    const today = currentDayName.value
+    const uid = currentUserId.value
+    const sName = studentName.value?.toLowerCase()
+
+    const candidates = []
+    classSchedules.forEach((item) => {
+      const itemDay = item.hari_piket || item.hari
+      if (itemDay === today) {
+        const itemUid = item.user_id || item.siswa_id || item.user?.id || item.siswa?.id || item.id
+        const name = item.user?.name || item.siswa?.name || item.name || item.nama_siswa || ''
+
+        const isMe = (uid && itemUid && Number(uid) === Number(itemUid)) ||
+          (sName && name.toLowerCase().includes(sName))
+
+        if (!isMe && name && itemUid) {
+          if (!candidates.some(c => Number(c.id) === Number(itemUid))) {
+            candidates.push({ id: Number(itemUid), name })
+          }
+        }
+      }
+    })
+
+    absentCandidates.value = candidates
+  } catch (err) {
+    console.warn('Gagal memuat kandidat siswa tidak piket:', err)
+    absentCandidates.value = []
+  }
+}
+
 const submitting = ref(false)
 
 // Fetch Tasks from API / Database Real
@@ -401,7 +488,6 @@ const fetchTasks = async () => {
     } else if (res.data && res.data.data && Array.isArray(res.data.data)) {
       availableTasks.value = res.data.data
     } else {
-      // Fallback endpoint jika beda route
       const resAlt = await api.get('/admin/tasks')
       availableTasks.value = Array.isArray(resAlt.data) ? resAlt.data : (resAlt.data?.data || [])
     }
@@ -415,7 +501,6 @@ const fetchTasks = async () => {
     }
   } finally {
     loadingTasks.value = false
-    // Pre-select first task if available and none currently selected
     if (availableTasks.value.length > 0 && selectedTaskIds.value.length === 0) {
       selectedTaskIds.value = [availableTasks.value[0].id]
     }
@@ -452,7 +537,6 @@ const handleFileChange = (event) => {
     }
     const preview = URL.createObjectURL(file)
     uploadedFiles.value.push({ file, preview })
-    // Reset file input value
     event.target.value = ''
   }
 }
@@ -482,7 +566,6 @@ const handleFormSubmit = async () => {
 
   submitting.value = true
 
-  // Format tanggal YYYY-MM-DD
   const now = new Date()
   const yyyy = now.getFullYear()
   const mm = String(now.getMonth() + 1).padStart(2, '0')
@@ -497,7 +580,6 @@ const handleFormSubmit = async () => {
   formData.append('deskripsi', catatan.value || 'Bukti piket kelompok kelas.')
   formData.append('tanggal', formattedDateIso)
 
-  // Append tasks[] array (only IDs that actually exist in availableTasks)
   const validTaskIds = availableTasks.value.map((t) => Number(t.id))
   selectedTaskIds.value
     .filter((id) => id !== null && id !== undefined && id !== '')
@@ -506,6 +588,13 @@ const handleFormSubmit = async () => {
     .forEach((numId) => {
       formData.append('tasks[]', numId)
     })
+
+  // Append siswa_tidak_piket[] jika ada anggota piket yang dicentang tidak piket
+  if (selectedAbsentUserIds.value.length > 0) {
+    selectedAbsentUserIds.value.forEach((uid) => {
+      formData.append('siswa_tidak_piket[]', uid)
+    })
+  }
 
   try {
     await api.post('/siswa/bukti-piket', formData, {
@@ -552,5 +641,6 @@ const handleFormSubmit = async () => {
 onMounted(() => {
   updateDateInfo()
   fetchTasks()
+  fetchTodayOfficers()
 })
 </script>

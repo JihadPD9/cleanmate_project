@@ -2,11 +2,11 @@
   <div class="h-screen w-full relative font-sans text-slate-800 selection:bg-[#00B775] selection:text-white">
     <!-- 1. Header Sticky / Fixed Across Sections -->
     <header
-      class="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-slate-200/50 px-6 md:px-12 lg:px-20 py-3.5 transition-all duration-300"
+      class="fixed top-0 left-0 right-0 z-50 backdrop-blur-md bg-white/70 border-b border-slate-200/50 px-4 sm:px-6 md:px-12 lg:px-20 py-2.5 sm:py-3.5 transition-all duration-300"
     >
       <div class="max-w-7xl mx-auto flex items-center justify-between">
         <!-- Pure Text Logo -->
-        <router-link to="/" class="text-2xl font-extrabold tracking-tight text-slate-900">
+        <router-link to="/" class="text-xl sm:text-2xl font-extrabold tracking-tight text-slate-900 shrink-0">
           Clean<span class="text-[#00B775]">Mate</span>
         </router-link>
 
@@ -22,10 +22,10 @@
           <router-link
             v-if="isScrolled"
             to="/login"
-            class="inline-flex items-center space-x-2 bg-gradient-to-r from-[#00B775] to-emerald-600 hover:from-[#009d64] hover:to-emerald-700 text-white font-semibold px-5 py-2 rounded-full shadow-md shadow-[#00B775]/20 hover:shadow-emerald-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-sm"
+            class="inline-flex items-center space-x-1.5 sm:space-x-2 bg-gradient-to-r from-[#00B775] to-emerald-600 hover:from-[#009d64] hover:to-emerald-700 text-white font-semibold px-3.5 sm:px-5 py-1.5 sm:py-2 rounded-full shadow-md shadow-[#00B775]/20 hover:shadow-emerald-500/35 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200 text-xs sm:text-sm"
           >
-            <span>Masuk ke Aplikasi</span>
-            <ArrowRight class="w-4 h-4" />
+            <span>Masuk</span>
+            <ArrowRight class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
           </router-link>
         </transition>
       </div>
@@ -38,7 +38,7 @@
       class="h-screen w-full overflow-y-auto snap-y snap-mandatory scroll-smooth bg-slate-50 overflow-x-hidden"
     >
       <!-- Section 1: Hero Section (Full Screen Snap) -->
-      <section class="h-screen w-full snap-start snap-always relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50/40 to-slate-100 px-6 md:px-12 lg:px-20 pt-20 sm:pt-24 pb-4">
+      <section class="h-screen w-full snap-start snap-always relative flex flex-col justify-between overflow-hidden bg-gradient-to-br from-slate-50 via-emerald-50/40 to-slate-100 px-4 sm:px-8 md:px-12 lg:px-20 pt-16 sm:pt-24 pb-3 sm:pb-4">
         <!-- Background Ambient Ornaments & Mesh -->
         <div class="absolute -top-28 -right-28 w-[550px] h-[550px] bg-[#00B775]/15 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
         <div class="absolute -bottom-24 -left-24 w-[450px] h-[450px] bg-teal-300/25 rounded-full blur-3xl pointer-events-none"></div>
@@ -46,14 +46,14 @@
 
         <!-- Hero Main Content (Left Aligned) -->
         <div class="w-full max-w-7xl mx-auto flex-1 flex flex-col justify-center text-left z-10 my-auto">
-          <div class="max-w-3xl space-y-4">
+          <div class="max-w-3xl space-y-2.5 sm:space-y-4">
             <!-- Tagline Mini Uppercase Spasi Wide (Top spacing disesuaikan) -->
-            <p class="text-xs font-semibold tracking-widest text-[#00B775] uppercase">
+            <p class="text-[10px] sm:text-xs font-semibold tracking-widest text-[#00B775] uppercase">
               Platform Kebersihan Kelas Modern
             </p>
 
             <!-- Hero Headline -->
-            <h1 class="text-4xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.12]">
+            <h1 class="text-3xl sm:text-5xl md:text-6xl lg:text-7xl font-extrabold text-slate-900 tracking-tight leading-[1.15]">
               Jagalah kebersihan <br class="hidden sm:inline" />
               <span class="bg-gradient-to-r from-[#00B775] via-emerald-600 to-teal-600 bg-clip-text text-transparent">
                 Kelas Anda.
@@ -61,51 +61,51 @@
             </h1>
 
             <!-- Subtitle / Deskripsi -->
-            <p class="text-slate-600 text-base sm:text-lg md:text-xl leading-relaxed max-w-2xl font-normal">
+            <p class="text-slate-600 text-xs sm:text-lg md:text-xl leading-relaxed max-w-2xl font-normal">
               Kelas bersih, belajar lebih fokus. Kelola jadwal piket, bukti tugas, hingga sanksi secara praktis dan transparan dalam satu platform.
             </p>
 
             <!-- Primary CTA Button -->
-            <div class="pt-2 flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
+            <div class="pt-1 sm:pt-2 flex flex-col sm:flex-row items-stretch sm:items-center space-y-3 sm:space-y-0 sm:space-x-4">
               <router-link
                 to="/login"
-                class="inline-flex items-center justify-center space-x-2.5 bg-[#00B775] hover:bg-[#009d64] text-white font-bold text-base px-8 py-3.5 rounded-2xl shadow-xl shadow-[#00B775]/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
+                class="inline-flex items-center justify-center space-x-2 bg-[#00B775] hover:bg-[#009d64] text-white font-bold text-sm sm:text-base px-6 sm:px-8 py-3 sm:py-3.5 rounded-2xl shadow-xl shadow-[#00B775]/30 hover:shadow-emerald-500/40 hover:-translate-y-0.5 active:translate-y-0 transition-all duration-200"
               >
                 <span>Masuk ke Aplikasi</span>
-                <ArrowRight class="w-5 h-5" />
+                <ArrowRight class="w-4 h-4 sm:w-5 sm:h-5" />
               </router-link>
             </div>
 
             <!-- Quick Highlight Feature Badges -->
-            <div class="pt-5 grid grid-cols-1 sm:grid-cols-3 gap-3.5 border-t border-slate-200/80">
-              <div class="flex items-center space-x-3 text-slate-700">
-                <div class="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-[#00B775] shrink-0 shadow-xs">
-                  <CheckCircle2 class="w-4 h-4" />
+            <div class="pt-3 sm:pt-5 grid grid-cols-1 sm:grid-cols-3 gap-2 sm:gap-3.5 border-t border-slate-200/80">
+              <div class="flex items-center space-x-2.5 text-slate-700">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-[#00B775] shrink-0 shadow-xs">
+                  <CheckCircle2 class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
-                <span class="text-sm font-semibold">Fokus Belajar Maksimal</span>
+                <span class="text-xs sm:text-sm font-semibold">Fokus Belajar Maksimal</span>
               </div>
-              <div class="flex items-center space-x-3 text-slate-700">
-                <div class="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-[#00B775] shrink-0 shadow-xs">
-                  <ShieldCheck class="w-4 h-4" />
+              <div class="flex items-center space-x-2.5 text-slate-700">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-[#00B775] shrink-0 shadow-xs">
+                  <ShieldCheck class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
-                <span class="text-sm font-semibold">Lingkungan Sehat</span>
+                <span class="text-xs sm:text-sm font-semibold">Lingkungan Sehat</span>
               </div>
-              <div class="flex items-center space-x-3 text-slate-700">
-                <div class="w-8 h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-[#00B775] shrink-0 shadow-xs">
-                  <Zap class="w-4 h-4" />
+              <div class="flex items-center space-x-2.5 text-slate-700">
+                <div class="w-7 h-7 sm:w-8 sm:h-8 rounded-lg bg-emerald-100 border border-emerald-200 flex items-center justify-center text-[#00B775] shrink-0 shadow-xs">
+                  <Zap class="w-3.5 h-3.5 sm:w-4 sm:h-4" />
                 </div>
-                <span class="text-sm font-semibold">Budaya Tanggung Jawab</span>
+                <span class="text-xs sm:text-sm font-semibold">Budaya Tanggung Jawab</span>
               </div>
             </div>
           </div>
         </div>
 
         <!-- Scroll Down Indicator -->
-        <div class="w-full max-w-7xl mx-auto pb-2 flex justify-between items-center text-slate-500 text-xs z-10 font-medium">
+        <div class="w-full max-w-7xl mx-auto pb-1 sm:pb-2 flex justify-between items-center text-slate-500 text-[10px] sm:text-xs z-10 font-medium">
           <span>&copy; {{ new Date().getFullYear() }} CleanMate App</span>
           <div class="flex items-center space-x-1.5 animate-bounce">
             <span>Scroll ke bawah</span>
-            <svg class="w-4 h-4 text-[#00B775]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+            <svg class="w-3.5 h-3.5 sm:w-4 sm:h-4 text-[#00B775]" fill="none" stroke="currentColor" viewBox="0 0 24 24">
               <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M19 14l-7 7m0 0l-7-7m7 7V3"></path>
             </svg>
           </div>
@@ -113,22 +113,22 @@
       </section>
 
       <!-- Section 2: Features Section / Interactive Carousel (Full Screen Snap) -->
-      <section class="h-screen w-full snap-start snap-always relative flex flex-col justify-center items-center overflow-hidden bg-gradient-to-br from-emerald-50/60 via-slate-50 to-emerald-100/40 px-6 md:px-12 lg:px-20 pt-16 pb-6">
+      <section class="h-screen w-full snap-start snap-always relative flex flex-col justify-center items-center overflow-hidden bg-gradient-to-br from-emerald-50/60 via-slate-50 to-emerald-100/40 px-4 sm:px-8 md:px-12 lg:px-20 pt-16 sm:pt-20 pb-4 sm:pb-6">
         <!-- Background Ambient Blobs & Mesh -->
         <div class="absolute top-10 -left-20 w-[450px] h-[450px] bg-teal-200/40 rounded-full blur-3xl pointer-events-none"></div>
         <div class="absolute -bottom-10 -right-20 w-[500px] h-[500px] bg-[#00B775]/20 rounded-full blur-3xl pointer-events-none animate-pulse"></div>
         <div class="absolute inset-0 bg-[radial-gradient(#00B775_1px,transparent_1px)] [background-size:32px_32px] opacity-[0.06] pointer-events-none"></div>
 
-        <div class="w-full max-w-4xl mx-auto z-10 flex flex-col justify-center items-center">
+        <div class="w-full max-w-4xl mx-auto z-10 flex flex-col justify-center items-center my-auto">
           <!-- Section Header -->
-          <div class="text-center space-y-2 mb-6 max-w-2xl">
-            <p class="text-xs font-semibold tracking-widest text-[#00B775] uppercase">
+          <div class="text-center space-y-1.5 sm:space-y-2 mb-4 sm:mb-6 max-w-2xl">
+            <p class="text-[10px] sm:text-xs font-semibold tracking-widest text-[#00B775] uppercase">
               MANFAAT UTAMA
             </p>
-            <h2 class="text-3xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight">
+            <h2 class="text-2xl sm:text-4xl md:text-5xl font-extrabold text-slate-900 tracking-tight leading-snug">
               Mengapa Kebersihan Itu Penting
             </h2>
-            <p class="text-slate-600 text-base md:text-lg leading-relaxed">
+            <p class="text-slate-600 text-xs sm:text-base md:text-lg leading-relaxed max-w-lg mx-auto">
               Lingkungan higienis adalah pilar utama kesehatan, produktivitas, dan integritas profesional.
             </p>
           </div>
@@ -141,31 +141,31 @@
             @mouseleave="stopDrag"
             @mouseup="stopDrag"
             @mousemove="onDrag"
-            class="w-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth py-4 no-scrollbar mb-4 cursor-grab active:cursor-grabbing select-none"
+            class="w-full flex overflow-x-auto snap-x snap-mandatory scroll-smooth py-2 sm:py-4 no-scrollbar mb-3 sm:mb-4 cursor-grab active:cursor-grabbing select-none"
           >
             <div
               v-for="(item, index) in carouselItems"
               :key="index"
-              class="snap-center shrink-0 w-full relative overflow-hidden backdrop-blur-md bg-white/75 border border-white/80 shadow-xl shadow-emerald-900/5 rounded-3xl p-8 md:p-10 text-left flex flex-col justify-center group"
+              class="snap-center shrink-0 w-full relative overflow-hidden backdrop-blur-md bg-white/75 border border-white/80 shadow-xl shadow-emerald-900/5 rounded-3xl p-5 sm:p-8 md:p-10 text-left flex flex-col justify-center group"
             >
               <!-- Background Watermark Icon -->
               <div class="absolute -right-8 -bottom-8 opacity-[0.07] group-hover:opacity-15 transition-opacity duration-500 pointer-events-none">
-                <component :is="item.icon" class="w-64 h-64 text-[#00B775]" />
+                <component :is="item.icon" class="w-48 h-48 sm:w-64 sm:h-64 text-[#00B775]" />
               </div>
 
-              <div class="flex items-center space-x-4 mb-4 z-10">
-                <div class="w-12 h-12 rounded-2xl bg-gradient-to-tr from-[#00B775] to-emerald-400 flex items-center justify-center shadow-md shadow-[#00B775]/25 text-white shrink-0">
-                  <component :is="item.icon" class="w-6 h-6" />
+              <div class="flex items-center space-x-3 sm:space-x-4 mb-3 sm:mb-4 z-10">
+                <div class="w-10 h-10 sm:w-12 sm:h-12 rounded-2xl bg-gradient-to-tr from-[#00B775] to-emerald-400 flex items-center justify-center shadow-md shadow-[#00B775]/25 text-white shrink-0">
+                  <component :is="item.icon" class="w-5 h-5 sm:w-6 sm:h-6" />
                 </div>
                 <div>
-                  <span class="text-xs font-bold uppercase tracking-wider text-[#00B775]">Point 0{{ index + 1 }}</span>
-                  <h3 class="text-2xl md:text-3xl font-extrabold text-slate-900">
+                  <span class="text-[10px] sm:text-xs font-bold uppercase tracking-wider text-[#00B775]">Point 0{{ index + 1 }}</span>
+                  <h3 class="text-xl sm:text-2xl md:text-3xl font-extrabold text-slate-900 leading-tight">
                     {{ item.title }}
                   </h3>
                 </div>
               </div>
 
-              <p class="text-slate-700 leading-relaxed text-base md:text-lg pl-0 sm:pl-16 z-10 font-normal">
+              <p class="text-slate-700 leading-relaxed text-xs sm:text-base md:text-lg z-10 font-normal">
                 {{ item.description }}
               </p>
             </div>

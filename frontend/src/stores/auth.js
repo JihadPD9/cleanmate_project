@@ -39,24 +39,9 @@ export const useAuthStore = defineStore('auth', {
 
         return { success: true, role: selectedRole }
       } catch (err) {
-        console.warn('API connection failed, falling back to client-side auth for UI testing:', err)
-        
-        // Fallback for UI demonstration/testing when backend API is unavailable
-        const dummyToken = 'mock-bearer-token-' + Date.now()
-        const dummyUser = {
-          name: selectedRole === 'admin' ? 'Admin Piket' : 'Siswa Piket',
-          email: credentials.email,
-        }
-
-        this.token = dummyToken
-        this.user = dummyUser
-        this.role = selectedRole
-
-        localStorage.setItem('token', dummyToken)
-        localStorage.setItem('user', JSON.stringify(dummyUser))
-        localStorage.setItem('role', selectedRole)
-
-        return { success: true, role: selectedRole, fallback: true }
+        const errorMsg = err.response?.data?.message || err.response?.data?.error || 'Email atau password salah.'
+        this.error = errorMsg
+        return { success: false, error: errorMsg }
       } finally {
         this.loading = false
       }
